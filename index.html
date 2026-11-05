@@ -3,25 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploration HD-2D - Interplanétaire</title>
+    <title>Exploration HD-2D - Interplanétaire (RPG)</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, sans-serif; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Georgia', serif; user-select: none; }
         
         #ui-layer {
             position: absolute; top: 20px; left: 20px; color: white;
-            background: linear-gradient(135deg, rgba(10,10,20,0.95), rgba(0,0,0,0.8)); 
-            padding: 15px 25px; border-radius: 12px; border: 1px solid #555;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6); z-index: 10; transition: border-color 0.5s;
+            background: linear-gradient(135deg, rgba(20,15,10,0.95), rgba(0,0,0,0.8)); 
+            padding: 15px 30px; border-radius: 8px; border: 2px solid #a67c00;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8); z-index: 10; transition: border-color 0.5s;
         }
-        #planet-name { margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 2px; font-size: 1.4rem; transition: color 0.5s; }
-        p { margin: 0; color: #bdc3c7; font-size: 0.95rem; }
+        #planet-name { margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 3px; font-size: 1.3rem; transition: color 0.5s; text-shadow: 2px 2px 4px #000; }
+        p { margin: 0; color: #ddd; font-size: 0.95rem; font-style: italic; }
         
-        #interaction-box {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9); color: white; padding: 15px 30px;
-            border-radius: 30px; border: 2px solid #fff; font-size: 1.2rem; font-weight: bold;
-            display: none; box-shadow: 0 0 20px rgba(255,255,255,0.3); z-index: 20; text-align: center;
+        #interaction-hint {
+            position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7); color: white; padding: 10px 20px;
+            border-radius: 20px; font-size: 1rem; font-family: 'Segoe UI', sans-serif;
+            display: none; box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 15; text-align: center; border: 1px solid #fff;
         }
+
+        #dialogue-box {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(to bottom, #2b2b2b, #1a1a1a); color: white; padding: 20px 30px;
+            border-radius: 8px; border: 2px solid #d4af37; font-size: 1.2rem;
+            display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 20; width: 60%; max-width: 700px;
+        }
+        #dialogue-name { color: #d4af37; font-weight: bold; margin-bottom: 5px; font-size: 1.1rem; text-transform: uppercase; }
 
         #fade-screen {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -34,25 +42,34 @@
 <body>
 
     <div id="ui-layer">
-        <h2 id="planet-name" style="color: #e67e22;">Mars - Secteur 4</h2>
-        <p id="planet-desc">Trouvez votre vaisseau pour voyager.</p>
-        <p style="font-size: 0.8rem; margin-top: 15px; color: #7f8c8d;">Contrôles : Z Q S D | Action : E</p>
+        <h2 id="planet-name" style="color: #e67e22;">Mars - Désert</h2>
+        <p id="planet-desc">Trouvez votre vaisseau pour rentrer.</p>
+        <p style="font-size: 0.8rem; margin-top: 15px; color: #aaa; font-family: 'Segoe UI';">Déplacement: Z Q S D | Interagir: E</p>
     </div>
 
-    <div id="interaction-box">Appuyez sur [E] pour voyager vers la Terre</div>
+    <div id="interaction-hint">Appuyez sur [E]</div>
+    
+    <div id="dialogue-box">
+        <div id="dialogue-name">Nom</div>
+        <div id="dialogue-text">Texte</div>
+    </div>
+
     <div id="fade-screen"></div>
 
     <script>
         let scene, camera, renderer, player, spaceship, playerLight;
-        let environmentGroup = new THREE.Group(); // Contient le décor de la planète actuelle
+        let environmentGroup = new THREE.Group(); 
         
         const keys = { z: false, q: false, s: false, d: false, e: false };
         let isMoving = false;
         let time = 0;
-        let currentPlanet = 'mars'; // 'mars' ou 'terre'
-        let canInteractWithShip = false;
+        let currentPlanet = 'mars'; // Commence sur Mars
+        
+        let npcs = [];
+        let activeInteractable = null; // { type: 'ship' | 'npc', data: ... }
+        let isDialogueOpen = false;
 
-        // --- 1. PIXEL ART DÉTAILLÉ (16x16 Shading avancé) ---
+        // --- 1. GÉNÉRATEURS DE TEXTURES (SANS FICHIERS EXTERNES) ---
         function createPixelTexture(artArray, palette) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -69,52 +86,82 @@
             return tex;
         }
 
-        // Astronaute beaucoup plus détaillé avec ombrages
-        const playerArt = [
+        // Texture pour les pavés du village
+        function createCobblestoneTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#3a3a40'; ctx.fillRect(0,0,256,256);
+            for(let i=0; i<400; i++) {
+                ctx.fillStyle = Math.random()>0.5 ? '#4a4a50' : '#2a2a30';
+                ctx.beginPath();
+                ctx.arc(Math.random()*256, Math.random()*256, 3+Math.random()*5, 0, Math.PI*2);
+                ctx.fill();
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(15, 15);
+            return tex;
+        }
+
+        // Modèle de personnage de base
+        const characterArt = [
             "      BBBB      ",
-            "    BB1111BB    ",
-            "   B11222211B   ",
-            "  B122CCCC221B  ",
-            "  B122CWWV221B  ",
-            "  B122CVVV221B  ",
-            "   B11222211B   ",
-            "   BB111111BB   ",
-            "  B33B1111B33B  ",
-            " B344BB11BB443B ",
-            " B344B1111B443B ",
-            " BB33B1111B33BB ",
-            "  BB B1111B BB  ",
+            "    BHHHHHHB    ",
+            "   BHH2222HHB   ",
+            "  BH22EEEE22HB  ",
+            "  BH22EWWV22HB  ",
+            "  BH22EVVV22HB  ",
+            "   BHH2222HHB   ",
+            "   BBCCCCCCBB   ",
+            "  B33BCCCCB33B  ",
+            " B344BBCCBB443B ",
+            " B344BCCCCB443B ",
+            " BB33BCCCCB33BB ",
+            "  BB B5555B BB  ",
             "     B5555B     ",
-            "    B566665B    ",
+            "    B666666B    ",
             "    BBBBBBBB    "
         ];
-        // B: Contour, 1: Blanc cassé, 2: Gris ombre, C: Visière Cyan, W: Reflet visière, V: Ombre visière, 3: Sac rouge sombre, 4: Sac rouge vif, 5: Bottes grises, 6: Semelles sombres
-        const playerPalette = { 'B':'#000', '1':'#ECF0F1', '2':'#BDC3C7', 'C':'#00E5FF', 'W':'#FFFFFF', 'V':'#0088AA', '3':'#922B21', '4':'#E74C3C', '5':'#7F8C8D', '6':'#2C3E50' };
+
+        // Palettes personnalisées
+        const playerPalette = { 'B':'#000', 'H':'#ECF0F1', '2':'#FFE0BD', 'E':'#00E5FF', 'W':'#FFF', 'V':'#0088AA', 'C':'#ECF0F1', '3':'#922B21', '4':'#E74C3C', '5':'#7F8C8D', '6':'#2C3E50' }; // Astronaute
+        
+        function getNPCPalette(hair, clothes, pants) {
+            return { 'B':'#111', 'H':hair, '2':'#FFDAB9', 'E':'#000', 'W':'#000', 'V':'#000', 'C':clothes, '3':clothes, '4':clothes, '5':pants, '6':'#333' };
+        }
 
         function init() {
             scene = new THREE.Scene();
             scene.add(environmentGroup);
 
-            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
-            // Création du joueur 2D
-            const playerTex = createPixelTexture(playerArt, playerPalette);
+            // Joueur
+            const playerTex = createPixelTexture(characterArt, playerPalette);
             player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTex }));
-            player.scale.set(3, 3, 1);
+            player.scale.set(2.5, 2.5, 1);
             scene.add(player);
 
-            playerLight = new THREE.PointLight(0xffffff, 0, 10); // S'allumera sur Terre
+            playerLight = new THREE.PointLight(0xffddaa, 0, 8); 
             scene.add(playerLight);
 
-            // Events
             window.addEventListener('keydown', (e) => { 
                 const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; 
-                if (k === 'e' && canInteractWithShip) travel();
+                
+                if (k === 'e' && !e.repeat) {
+                    if (isDialogueOpen) {
+                        closeDialogue(); // Ferme si déjà ouvert
+                    } else if (activeInteractable) {
+                        if (activeInteractable.type === 'ship') travel();
+                        if (activeInteractable.type === 'npc') openDialogue(activeInteractable.data);
+                    }
+                }
             });
             window.addEventListener('keyup', (e) => { 
                 const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; 
@@ -124,59 +171,136 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
-            buildMars();
+            buildMars(); // On commence sur Mars pour voir la différence !
             animate();
         }
 
-        // --- 2. VAISSEAU SPATIAL 3D ---
+        // --- 2. CRÉATION DES DÉCORS ET PNJ ---
+
+        function createHouse(x, z, width, depth, height) {
+            const group = new THREE.Group();
+            
+            const baseGeo = new THREE.BoxGeometry(width, height, depth);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0xaa9988, roughness: 1 });
+            const base = new THREE.Mesh(baseGeo, baseMat); 
+            base.position.y = height/2; base.castShadow = true; base.receiveShadow = true;
+            group.add(base);
+            
+            const roofGeo = new THREE.ConeGeometry(width*0.7, height*0.6, 4);
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x5c2a21, roughness: 0.8 }); 
+            const roof = new THREE.Mesh(roofGeo, roofMat); 
+            roof.position.y = height + (height*0.6)/2; roof.rotation.y = Math.PI/4;
+            roof.castShadow = true; 
+            group.add(roof);
+
+            // Fenêtre lumineuse
+            const winLight = new THREE.PointLight(0xffaa33, 1, 15);
+            winLight.position.set(0, height*0.4, depth/2 + 0.5);
+            group.add(winLight);
+
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        function createStreetLamp(x, z) {
+            const group = new THREE.Group();
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+            pole.position.y = 2; pole.castShadow = true; group.add(pole);
+            
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffcc77 }));
+            bulb.position.y = 4.2; group.add(bulb);
+            
+            const light = new THREE.PointLight(0xffaa33, 1.5, 20); // Lumière chaude et forte
+            light.position.y = 4.2; light.castShadow = true; group.add(light);
+            
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        function createTree(x, z) {
+            const group = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3), new THREE.MeshStandardMaterial({ color: 0x4a2e00 }));
+            trunk.position.y = 1.5; trunk.castShadow = true; group.add(trunk);
+            
+            const leaves = new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshStandardMaterial({ color: 0x2e5c1e, roughness: 0.9 }));
+            leaves.position.y = 3.5; leaves.castShadow = true; group.add(leaves);
+            
+            group.position.set(x, 0, z);
+            return group;
+        }
+
         function createSpaceship(x, z) {
             const shipGroup = new THREE.Group();
-            
-            // Corps métallique
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.5, 6, 16), bodyMat);
-            body.position.y = 4; body.castShadow = true;
-            shipGroup.add(body);
-
-            // Nez du vaisseau
-            const noseMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c, metalness: 0.5, roughness: 0.3 });
-            const nose = new THREE.Mesh(new THREE.ConeGeometry(1, 3, 16), noseMat);
-            nose.position.y = 8.5; nose.castShadow = true;
-            shipGroup.add(nose);
-
-            // Ailerons
-            const finMat = new THREE.MeshStandardMaterial({ color: 0x34495e, metalness: 0.7, roughness: 0.2 });
-            for(let i=0; i<4; i++) {
-                const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 3), finMat);
-                fin.position.y = 2.5;
-                fin.rotation.y = (Math.PI / 2) * i;
-                fin.position.x = Math.sin((Math.PI / 2) * i) * 1.5;
-                fin.position.z = Math.cos((Math.PI / 2) * i) * 1.5;
-                fin.castShadow = true;
-                shipGroup.add(fin);
-            }
-
-            // Réacteur lumineux
-            const glow = new THREE.PointLight(0x00ffff, 2, 10);
-            glow.position.y = 0;
-            shipGroup.add(glow);
-
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2, 6, 16), new THREE.MeshStandardMaterial({ color: 0xaabbcc, metalness: 0.6 }));
+            body.position.y = 3; body.castShadow = true; shipGroup.add(body);
+            const nose = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3, 16), new THREE.MeshStandardMaterial({ color: 0xd35400 }));
+            nose.position.y = 7.5; nose.castShadow = true; shipGroup.add(nose);
             shipGroup.position.set(x, 0, z);
             return shipGroup;
         }
 
-        // --- 3. GÉNÉRATEURS DE PLANÈTES ---
-        function clearEnvironment() {
-            while(environmentGroup.children.length > 0){ 
-                environmentGroup.remove(environmentGroup.children[0]); 
-            }
+        function spawnNPC(name, text, startX, startZ, hairColor, clothesColor, pantsColor) {
+            const tex = createPixelTexture(characterArt, getNPCPalette(hairColor, clothesColor, pantsColor));
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+            sprite.scale.set(2.3, 2.3, 1);
+            sprite.position.set(startX, 1.15, startZ);
+            environmentGroup.add(sprite);
+
+            npcs.push({
+                mesh: sprite, name: name, text: text,
+                spawn: { x: startX, z: startZ },
+                target: { x: startX, z: startZ },
+                timer: 0, isMoving: false
+            });
+        }
+
+        function buildEarth() {
+            clearEnvironment();
+            scene.background = new THREE.Color(0x1a1a2e); // Ciel crépusculaire sombre
+            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.02);
+            playerLight.intensity = 0.5; // Petite lueur sur le joueur
+
+            // Lumières d'ambiance froides pour contraster avec les lampadaires chauds
+            const ambient = new THREE.AmbientLight(0x404060, 0.6); 
+            environmentGroup.add(ambient);
+
+            // Sol pavé
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.MeshStandardMaterial({ map: createCobblestoneTexture(), roughness: 0.8 }));
+            ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
+            environmentGroup.add(ground);
+
+            // Le Village (Murs / Maisons)
+            environmentGroup.add(createHouse(-15, -15, 8, 8, 6));
+            environmentGroup.add(createHouse(15, -12, 10, 8, 7));
+            environmentGroup.add(createHouse(-10, 18, 9, 9, 6));
+            environmentGroup.add(createHouse(18, 15, 7, 7, 5));
+
+            // Décorations
+            environmentGroup.add(createStreetLamp(-5, -5));
+            environmentGroup.add(createStreetLamp(8, 6));
+            environmentGroup.add(createTree(-12, -2));
+            environmentGroup.add(createTree(12, -2));
+            environmentGroup.add(createTree(-5, 12));
+
+            // PNJ
+            spawnNPC("Emma", "La brise du soir est tellement agréable... Tu ne trouves pas ?", -4, 0, '#8e44ad', '#9b59b6', '#ecf0f1'); // Violette
+            spawnNPC("Serge", "J'ai passé la journée à réparer mon toit. Ces maisons anciennes demandent de l'entretien.", 5, -3, '#d35400', '#2980b9', '#34495e'); // Bleu/Orange
+            spawnNPC("Kelly", "Oh, un astronaute ! Tu viens des étoiles ? Moi je n'ai jamais quitté ce village.", -3, 8, '#f1c40f', '#27ae60', '#bdc3c7'); // Jaune/Verte
+            spawnNPC("Jessica", "Fais attention près de la lisière du village, il fait vite très sombre la nuit.", 7, 7, '#c0392b', '#111', '#111'); // Rouge/Noire
+
+            // Vaisseau posé à l'extérieur du village
+            spaceship = createSpaceship(0, 25);
+            environmentGroup.add(spaceship);
+
+            // UI
+            updateUI("Terre - Village d'Oakhaven", "#a67c00", "Parlez aux habitants ou retournez au vaisseau.");
         }
 
         function buildMars() {
             clearEnvironment();
             scene.background = new THREE.Color(0x2a0d05);
             scene.fog = new THREE.FogExp2(0x2a0d05, 0.02);
-            playerLight.intensity = 0; // Pas besoin de lampe de poche en plein jour
+            playerLight.intensity = 0; 
 
             const ambient = new THREE.AmbientLight(0xffddbb, 0.4);
             const sun = new THREE.DirectionalLight(0xff7700, 1.2);
@@ -184,8 +308,8 @@
             sun.shadow.camera.left = -50; sun.shadow.camera.right = 50; sun.shadow.camera.top = 50; sun.shadow.camera.bottom = -50;
             environmentGroup.add(ambient, sun);
 
-            // Sable vallonné
-            const groundGeo = new THREE.PlaneGeometry(200, 200, 80, 80);
+            // Sol vallonné
+            const groundGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
             const pos = groundGeo.attributes.position;
             for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i)*0.05) * Math.cos(pos.getY(i)*0.05) * 3);
             groundGeo.computeVertexNormals();
@@ -193,140 +317,16 @@
             ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
             environmentGroup.add(ground);
 
-            // Vaisseau
-            spaceship = createSpaceship(10, -15);
+            spaceship = createSpaceship(10, -10);
             environmentGroup.add(spaceship);
 
-            // UI
-            document.getElementById('planet-name').innerText = "Mars - Secteur 4";
-            document.getElementById('planet-name').style.color = "#e67e22";
-            document.getElementById('ui-layer').style.borderColor = "#e67e22";
-            document.getElementById('interaction-box').innerText = "Appuyez sur [E] pour voyager vers la Terre";
+            updateUI("Mars - Désert Aride", "#e67e22", "Rejoignez votre vaisseau.");
         }
 
-        function buildEarth() {
-            clearEnvironment();
-            scene.background = new THREE.Color(0x050510); // Nuit noire cyberpunk
-            scene.fog = new THREE.FogExp2(0x050510, 0.03);
-            playerLight.intensity = 1.5; playerLight.color.setHex(0x00ffff); // Joueur éclaire en cyan
-
-            const ambient = new THREE.AmbientLight(0x101030, 0.8);
-            environmentGroup.add(ambient);
-
-            // Sol sombre avec grille Néon (Synthwave)
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x050510, roughness: 0.1, metalness: 0.8 }));
-            ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
-            environmentGroup.add(ground);
-
-            const grid = new THREE.GridHelper(200, 100, 0xff00ff, 0x00ffff);
-            grid.position.y = 0.05;
-            grid.material.transparent = true; grid.material.opacity = 0.3;
-            environmentGroup.add(grid);
-
-            // Bâtiments Cyberpunk (Boîtes lumineuses)
-            const bldgGeo = new THREE.BoxGeometry(1, 1, 1);
-            for(let i = 0; i < 60; i++) {
-                const height = 5 + Math.random() * 20;
-                // Couleurs saturées aléatoires (Magenta, Cyan, Néon Vert)
-                const colors = [0xff00ff, 0x00ffff, 0x39ff14, 0x9d00ff];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                const bldgMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.1 });
-                const building = new THREE.Mesh(bldgGeo, bldgMat);
-                building.scale.set(4 + Math.random()*4, height, 4 + Math.random()*4);
-                
-                // Ne pas poper sur le joueur ou le vaisseau
-                let bx = (Math.random()-0.5)*150; let bz = (Math.random()-0.5)*150;
-                if(Math.abs(bx) < 15 && Math.abs(bz) < 15) { bx += 20; bz += 20; }
-                
-                building.position.set(bx, height/2, bz);
-                building.castShadow = true; building.receiveShadow = true;
-                environmentGroup.add(building);
-
-                // Arêtes lumineuses façon Néon
-                const edges = new THREE.EdgesGeometry(bldgGeo);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: color }));
-                building.add(line); // Ajoute le néon au bâtiment
-
-                // Ajouter des lumières saturées au hasard
-                if(Math.random() > 0.7) {
-                    const pointLight = new THREE.PointLight(color, 2, 30);
-                    pointLight.position.set(bx, 2, bz + 5);
-                    environmentGroup.add(pointLight);
-                }
-            }
-
-            // Vaisseau
-            spaceship = createSpaceship(-10, -10);
-            environmentGroup.add(spaceship);
-
-            // UI
-            document.getElementById('planet-name').innerText = "Terre - Néo Cité";
-            document.getElementById('planet-name').style.color = "#00ffff";
-            document.getElementById('ui-layer').style.borderColor = "#00ffff";
-            document.getElementById('interaction-box').innerText = "Appuyez sur [E] pour retourner sur Mars";
+        function clearEnvironment() {
+            while(environmentGroup.children.length > 0) environmentGroup.remove(environmentGroup.children[0]);
+            npcs = [];
+            spaceship = null;
         }
 
-        // --- 4. LOGIQUE DE JEU ---
-        function travel() {
-            const screen = document.getElementById('fade-screen');
-            screen.style.opacity = '1';
-            setTimeout(() => {
-                if(currentPlanet === 'mars') {
-                    currentPlanet = 'terre'; buildEarth();
-                } else {
-                    currentPlanet = 'mars'; buildMars();
-                }
-                player.position.set(0, 1.5, 0); // Reset position joueur
-                screen.style.opacity = '0';
-            }, 1000);
-        }
-
-        function getGroundHeight(x, z) {
-            if(currentPlanet === 'terre') return 0; // Terre plate
-            return Math.sin(x*0.05) * Math.cos(z*0.05) * 3; // Mars vallonnée
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            time += 0.1;
-            const speed = 0.25;
-            isMoving = false;
-
-            if (keys.z) { player.position.z -= speed; isMoving = true; }
-            if (keys.s) { player.position.z += speed; isMoving = true; }
-            if (keys.q) { player.position.x -= speed; isMoving = true; }
-            if (keys.d) { player.position.x += speed; isMoving = true; }
-
-            const baseY = getGroundHeight(player.position.x, player.position.z) + 1.5;
-            player.position.y = baseY + (isMoving ? Math.abs(Math.sin(time * 2)) * 0.3 : 0);
-            playerLight.position.copy(player.position);
-
-            // Ajustement hauteur Vaisseau
-            if (spaceship) spaceship.position.y = getGroundHeight(spaceship.position.x, spaceship.position.z);
-
-            // Interaction Vaisseau
-            if (spaceship) {
-                const dist = player.position.distanceTo(spaceship.position);
-                const box = document.getElementById('interaction-box');
-                if (dist < 7) {
-                    box.style.display = 'block';
-                    canInteractWithShip = true;
-                } else {
-                    box.style.display = 'none';
-                    canInteractWithShip = false;
-                }
-            }
-
-            // Caméra
-            const targetCamPos = new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 12);
-            camera.position.lerp(targetCamPos, 0.1);
-            camera.lookAt(player.position);
-
-            renderer.render(scene, camera);
-        }
-
-        init();
-    </script>
-</body>
-</html>
+        // --- 3
