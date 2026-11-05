@@ -88,29 +88,4 @@ function createTex(art, pal) {
     const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
 }
 
-// Générateur de sang réaliste (flaques rondes)
-function getBloodTex() {
-    const c = document.createElement('canvas'); c.width=128; c.height=128; const ctx = c.getContext('2d');
-    ctx.fillStyle='#600';
-    ctx.beginPath(); ctx.arc(64,64,30,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(40,40,20,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(90,80,25,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(100,40,15,0,7); ctx.fill();
-    const t = new THREE.CanvasTexture(c); return t;
-}
-
-function init() {
-    scene = new THREE.Scene(); scene.add(environmentGroup);
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-    
-    renderer = new THREE.WebGLRenderer({ antialias:true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2;
-    document.body.appendChild(renderer.domElement);
-
-    player = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(alienArt, alienPal) }));
-    player.scale.set(2.2, 2.2, 1); scene.add(player);
-    playerLight = new THREE.PointLight(0x2ecc71, 1.2, 7); scene.add(playerLight);
-
-    window.addEventListener
+// Générateur de sang réaliste (flaques
