@@ -3,133 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploration Spatiale - HD-2D Complet</title>
+    <title>Exploration Spatiale - Mission Mars</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* --- MENU D'ACCUEIL --- */
+        #hub-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; z-index: 100; transition: opacity 1s;
+        }
+        #hub-screen h1 { font-size: 4rem; margin-bottom: 10px; text-shadow: 0 0 20px #e06666; }
+        #hub-screen p { font-size: 1.2rem; margin-bottom: 30px; color: #aaa; }
+        .btn-start {
+            padding: 15px 40px; font-size: 1.5rem; font-weight: bold; color: white;
+            background: linear-gradient(45deg, #d32f2f, #f44336); border: none; border-radius: 30px;
+            cursor: pointer; box-shadow: 0 8px 15px rgba(244, 67, 54, 0.4); transition: transform 0.2s;
+        }
+        .btn-start:hover { transform: scale(1.05); }
+
+        /* --- INTERFACE EN JEU --- */
         #ui-layer {
-            position: absolute; top: 20px; left: 20px; color: white;
-            font-family: 'Courier New', Courier, monospace; z-index: 10;
-            background: rgba(0, 0, 0, 0.8); padding: 15px;
-            border-radius: 8px; border: 2px solid #e06666;
-            box-shadow: 0 0 10px #e06666;
+            position: absolute; top: 20px; left: 20px; color: white; display: none;
+            background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 8px;
+            border-left: 4px solid #f44336; z-index: 10;
+        }
+        
+        /* --- BULLE DE DIALOGUE --- */
+        #dialogue-box {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9); color: black; padding: 20px;
+            border-radius: 10px; font-size: 1.2rem; font-weight: bold; display: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 20; text-align: center;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <h2>MISSION MARS</h2>
-        <p>Statut : Déployé</p>
-        <p><i>Déplacement : Z Q S D / Flèches</i></p>
+    <!-- Écran d'accueil -->
+    <div id="hub-screen">
+        <h1>STATION ORBITALE</h1>
+        <p>Sélectionnez votre prochaine destination</p>
+        <button class="btn-start" onclick="startGame()">Atterrir sur Mars</button>
     </div>
 
+    <!-- Interface en jeu -->
+    <div id="ui-layer">
+        <h2 style="margin:0 0 10px 0;">Mars</h2>
+        <p style="margin:0; font-size:14px;">Trouvez la forme de vie locale.</p>
+        <p style="margin:10px 0 0 0; font-size:12px; color:#ccc;">Déplacement : Z Q S D</p>
+    </div>
+
+    <!-- Dialogue PNJ -->
+    <div id="dialogue-box">Salutations, voyageur ! Que fais-tu sur mon territoire de sable ?</div>
+
     <script>
-        // --- 1. SCÈNE, CAMÉRA, RENDU ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x2a0a05); // Ciel sombre martien
-        scene.fog = new THREE.FogExp2(0x2a0a05, 0.05);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // --- 2. LUMIÈRES ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+        let scene, camera, renderer, player, alien;
+        let gameActive = false;
         
-        const sunLight = new THREE.DirectionalLight(0xff7700, 1.2);
-        sunLight.position.set(15, 25, 10);
-        scene.add(sunLight);
+        // --- CONTRÔLES AZERTY ---
+        const keys = { z: false, q: false, s: false, d: false };
+        const speed = 0.15;
+        
+        window.addEventListener('keydown', (e) => { 
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = true; 
+        });
+        window.addEventListener('keyup', (e) => { 
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = false; 
+        });
 
-        // --- 3. DÉCOR (Sol + Grille + Rochers 3D) ---
-        const groundGeometry = new THREE.PlaneGeometry(200, 200);
-        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x732a19, roughness: 1 });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
+        function initGame() {
+            // 1. SCÈNE & CAMÉRA
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x3d1c13); 
+            scene.fog = new THREE.FogExp2(0x3d1c13, 0.03); // Brouillard dense
 
-        const gridHelper = new THREE.GridHelper(200, 100, 0x000000, 0x000000);
-        gridHelper.material.opacity = 0.15;
-        gridHelper.material.transparent = true;
-        scene.add(gridHelper);
-
-        // Génération de rochers 3D
-        const rockGeometry = new THREE.DodecahedronGeometry(1);
-        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x4a1c11, roughness: 0.8 });
-        for (let i = 0; i < 40; i++) {
-            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-            rock.position.x = (Math.random() - 0.5) * 100;
-            rock.position.z = (Math.random() - 0.5) * 100;
-            rock.position.y = 0.5;
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             
-            // Éviter de faire apparaître un rocher sur le joueur
-            if (Math.abs(rock.position.x) > 3 && Math.abs(rock.position.z) > 3) {
-                scene.add(rock);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // Activer les ombres
+            document.body.appendChild(renderer.domElement);
+
+            // 2. LUMIÈRES (Soleil rasant pour l'effet HD-2D)
+            const ambientLight = new THREE.AmbientLight(0xffccaa, 0.4);
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xff6600, 1.5);
+            sunLight.position.set(-20, 15, -20);
+            sunLight.castShadow = true;
+            sunLight.shadow.camera.left = -30; sunLight.shadow.camera.right = 30;
+            sunLight.shadow.camera.top = 30; sunLight.shadow.camera.bottom = -30;
+            scene.add(sunLight);
+
+            // 3. DÉCORS (Dunes générées mathématiquement)
+            const groundGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
+            const pos = groundGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                // Création de collines et vallées avec sin/cos
+                let z = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 2; 
+                pos.setZ(i, z);
             }
+            groundGeo.computeVertexNormals();
+            
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x933b22, roughness: 0.9, flatShading: true });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Particules (Poussière martienne)
+            const particleGeo = new THREE.BufferGeometry();
+            const particleCount = 500;
+            const particlePos = new Float32Array(particleCount * 3);
+            for(let i=0; i<particleCount*3; i++) {
+                particlePos[i] = (Math.random() - 0.5) * 100;
+            }
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+            const particleMat = new THREE.PointsMaterial({ color: 0xffaa55, size: 0.2, transparent: true, opacity: 0.6 });
+            const particles = new THREE.Points(particleGeo, particleMat);
+            scene.add(particles);
+
+            // 4. LE JOUEUR (Astronaute 2D)
+            const playerCanvas = document.createElement('canvas');
+            playerCanvas.width = 64; playerCanvas.height = 64;
+            const pCtx = playerCanvas.getContext('2d');
+            pCtx.fillStyle = 'white'; pCtx.fillRect(16, 20, 32, 40); // Corps
+            pCtx.fillStyle = '#ddd'; pCtx.fillRect(12, 4, 40, 32); // Casque
+            pCtx.fillStyle = '#0cf'; pCtx.fillRect(20, 12, 24, 16); // Visière
+            
+            const playerTex = new THREE.CanvasTexture(playerCanvas);
+            playerTex.magFilter = THREE.NearestFilter;
+            player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTex }));
+            player.scale.set(2, 2, 1);
+            player.position.set(0, 1.5, 0);
+            scene.add(player);
+
+            // 5. L'EXTRATERRESTRE (PNJ)
+            const alienCanvas = document.createElement('canvas');
+            alienCanvas.width = 64; alienCanvas.height = 64;
+            const aCtx = alienCanvas.getContext('2d');
+            aCtx.fillStyle = '#4CAF50'; aCtx.fillRect(16, 24, 32, 36); // Corps vert
+            aCtx.fillRect(20, 8, 24, 16); // Tête
+            aCtx.fillStyle = 'black'; aCtx.fillRect(24, 12, 4, 4); aCtx.fillRect(36, 12, 4, 4); // Yeux
+            aCtx.fillStyle = '#4CAF50'; aCtx.fillRect(12, 0, 4, 10); aCtx.fillRect(48, 0, 4, 10); // Antennes
+            
+            const alienTex = new THREE.CanvasTexture(alienCanvas);
+            alienTex.magFilter = THREE.NearestFilter;
+            alien = new THREE.Sprite(new THREE.SpriteMaterial({ map: alienTex }));
+            alien.scale.set(1.8, 1.8, 1);
+            alien.position.set(10, 1.5, -15); // Placé plus loin
+            scene.add(alien);
+
+            // Lancement de la boucle
+            gameActive = true;
+            animate();
         }
 
-        // --- 4. PERSONNAGE 2D (Généré en code, pas besoin d'image !) ---
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        
-        // Dessin de l'astronaute en Pixel Art
-        ctx.fillStyle = '#ffffff'; // Combinaison
-        ctx.fillRect(16, 20, 32, 40); // Corps
-        ctx.fillStyle = '#dddddd'; // Ombre / Casque
-        ctx.fillRect(12, 4, 40, 32); // Casque
-        ctx.fillStyle = '#00ccff'; // Visière
-        ctx.fillRect(20, 12, 24, 16); 
-        ctx.fillStyle = '#888888'; // Sac à dos et détails
-        ctx.fillRect(8, 20, 8, 30); // Bras gauche
-        ctx.fillRect(48, 20, 8, 30); // Bras droit
-        ctx.fillRect(16, 60, 12, 4); // Pied gauche
-        ctx.fillRect(36, 60, 12, 4); // Pied droit
+        function startGame() {
+            document.getElementById('hub-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('hub-screen').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'block';
+                initGame();
+            }, 1000);
+        }
 
-        const playerTexture = new THREE.CanvasTexture(canvas);
-        playerTexture.magFilter = THREE.NearestFilter; // Rendu Pixel-Art net
-        
-        const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
-        const player = new THREE.Sprite(playerMaterial);
-        player.scale.set(1.5, 1.5, 1); 
-        player.position.y = 0.75; 
-        scene.add(player);
-
-        // --- 5. CAMÉRA ET CONTRÔLES ---
-        const cameraOffset = new THREE.Vector3(0, 4, 8); 
-        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-        const speed = 0.2;
-
-        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+        // 6. BOUCLE D'ANIMATION ET LOGIQUE
+        const cameraOffset = new THREE.Vector3(0, 5, 10);
 
         function animate() {
+            if (!gameActive) return;
             requestAnimationFrame(animate);
 
-            // Mouvement
-            if (keys.w || keys.ArrowUp) player.position.z -= speed;
-            if (keys.s || keys.ArrowDown) player.position.z += speed;
-            if (keys.a || keys.ArrowLeft) player.position.x -= speed;
-            if (keys.d || keys.ArrowRight) player.position.x += speed;
+            // Déplacement (AZERTY)
+            if (keys.z) player.position.z -= speed;
+            if (keys.s) player.position.z += speed;
+            if (keys.q) player.position.x -= speed;
+            if (keys.d) player.position.x += speed;
+
+            // Ajustement de la hauteur du joueur selon les dunes
+            const playerGroundY = Math.sin(player.position.x * 0.1) * Math.cos(player.position.z * 0.1) * 2;
+            player.position.y = playerGroundY + 1.5;
+
+            // Ajustement hauteur PNJ
+            const alienGroundY = Math.sin(alien.position.x * 0.1) * Math.cos(alien.position.z * 0.1) * 2;
+            alien.position.y = alienGroundY + 1.5;
+
+            // Interaction PNJ
+            const distance = player.position.distanceTo(alien.position);
+            const dialogue = document.getElementById('dialogue-box');
+            if (distance < 5) {
+                dialogue.style.display = 'block';
+            } else {
+                dialogue.style.display = 'none';
+            }
 
             // Suivi de caméra fluide
-            camera.position.x += (player.position.x + cameraOffset.x - camera.position.x) * 0.1;
-            camera.position.y += (player.position.y + cameraOffset.y - camera.position.y) * 0.1;
-            camera.position.z += (player.position.z + cameraOffset.z - camera.position.z) * 0.1;
+            camera.position.lerp(new THREE.Vector3(
+                player.position.x + cameraOffset.x,
+                player.position.y + cameraOffset.y,
+                player.position.z + cameraOffset.z
+            ), 0.1);
             camera.lookAt(player.position);
 
             renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
+            if(camera && renderer) {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            }
         });
-
-        animate();
     </script>
 </body>
 </html>
