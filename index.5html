@@ -1,132 +1,717 @@
-function buildStreet() {
-    clearEnv();
-    scene.background = new THREE.Color(0x080916);
-    scene.fog = new THREE.FogExp2(0x080916, 0.022);
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alien Escape — Évasion de la Terre</title>
 
-    environmentGroup.add(new THREE.AmbientLight(0x33304d, 0.8));
+  <style>
+    * { box-sizing: border-box; }
 
-    const road = new THREE.Mesh(
-        new THREE.PlaneGeometry(22, 120),
-        new THREE.MeshStandardMaterial({ color: 0x17171d, roughness: 0.95 })
-    );
-    road.rotation.x = -Math.PI / 2;
-    road.position.z = -25;
-    road.receiveShadow = true;
-    environmentGroup.add(road);
-
-    // Trottoirs
-    for (const side of [-1, 1]) {
-        const pavement = new THREE.Mesh(
-            new THREE.BoxGeometry(3, 0.2, 110),
-            new THREE.MeshStandardMaterial({ color: 0x383640 })
-        );
-        pavement.position.set(side * 12.5, 0.1, -25);
-        environmentGroup.add(pavement);
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #050508;
+      color: white;
+      font-family: Arial, sans-serif;
+      user-select: none;
     }
 
-    // Pointillés au milieu de la route
-    for (let i = 0; i < 16; i++) {
-        const mark = new THREE.Mesh(
-            new THREE.BoxGeometry(0.16, 0.025, 2),
-            new THREE.MeshBasicMaterial({ color: 0xb8b6a5 })
-        );
-        mark.position.set(0, 0.025, 10 - i * 7);
-        environmentGroup.add(mark);
+    canvas { display: block; }
+
+    #ui {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 5;
+      max-width: calc(100% - 32px);
+      padding: 14px 18px;
+      border: 2px solid #8abfff;
+      border-radius: 9px;
+      background: rgba(10, 14, 24, .88);
+      box-shadow: 0 4px 24px #0009;
     }
 
-    // Bâtiments avec quelques fenêtres lumineuses
-    for (let i = 0; i < 6; i++) {
-        const z = 12 - i * 18;
+    #level-name {
+      margin: 0 0 5px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 20px;
+    }
 
-        for (const side of [-1, 1]) {
-            const building = new THREE.Mesh(
-                new THREE.BoxGeometry(9, 16 + (i % 3) * 3, 15),
-                new THREE.MeshStandardMaterial({ color: side < 0 ? 0x191723 : 0x20202c })
-            );
-            building.position.set(side * 17, 8 + (i % 3) * 1.5, z);
-            environmentGroup.add(building);
+    #level-desc { margin: 0; color: #ddd; }
 
-            for (let w = 0; w < 3; w++) {
-                const window = new THREE.Mesh(
-                    new THREE.PlaneGeometry(1.1, 1.5),
-                    new THREE.MeshBasicMaterial({
-                        color: (i + w) % 2 === 0 ? 0xffc86b : 0x69baff
-                    })
-                );
-                window.position.set(side * 12.4, 7 + w * 2.5, z + w * 2);
-                window.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-                environmentGroup.add(window);
-            }
+    #controls {
+      margin-top: 10px;
+      color: #b7c1cf;
+      font-size: 12px;
+    }
+
+    #hint {
+      display: none;
+      position: absolute;
+      z-index: 6;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 18px;
+      border: 1px solid white;
+      border-radius: 24px;
+      background: #000d;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    #dialogue {
+      display: none;
+      position: absolute;
+      z-index: 8;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(680px, calc(100% - 32px));
+      padding: 18px 22px;
+      border: 2px solid #e5c35a;
+      border-radius: 8px;
+      background: #111e;
+      box-shadow: 0 5px 30px #000b;
+    }
+
+    #dialogue-name {
+      margin-bottom: 7px;
+      color: #e5c35a;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    #dialogue-text { line-height: 1.5; }
+
+    #dialogue-footer {
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    #fade {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      background: black;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .5s;
+    }
+
+    @media (max-width: 600px) {
+      #ui { top: 8px; left: 8px; padding: 10px 12px; }
+      #level-name { font-size: 16px; }
+      #level-desc { font-size: 13px; }
+      #controls { font-size: 10px; }
+      #hint { bottom: 90px; font-size: 13px; }
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+  <div id="ui">
+    <h1 id="level-name">La cave</h1>
+    <p id="level-desc">Échappe-toi de ta cellule.</p>
+    <div id="controls">Z Q S D : bouger · ESPACE : sauter · E : interagir</div>
+  </div>
+
+  <div id="hint"></div>
+
+  <div id="dialogue">
+    <div id="dialogue-name"></div>
+    <div id="dialogue-text"></div>
+    <div id="dialogue-footer">Appuie sur E pour continuer</div>
+  </div>
+
+  <div id="fade"></div>
+
+  <script>
+    let scene, camera, renderer, player;
+    let clock = new THREE.Clock();
+    let stage = 0;
+    let elapsed = 0;
+    let velocityY = 0;
+    let jumping = false;
+    let dialogueOpen = false;
+    let changingStage = false;
+    let activeThing = null;
+
+    const keys = {};
+    const interactables = [];
+    const npcs = [];
+    const speed = 6;
+    const playerHeight = 1.2;
+    const gravity = 18;
+    const jumpPower = 7;
+
+    const uiName = document.getElementById("level-name");
+    const uiDesc = document.getElementById("level-desc");
+    const hint = document.getElementById("hint");
+    const dialogue = document.getElementById("dialogue");
+    const fade = document.getElementById("fade");
+
+    const alienArt = [
+      "      BBBB      ",
+      "    BHHHHHHB    ",
+      "   BHH2222HHB   ",
+      "  BH22EEEE22HB  ",
+      "  BH22EWWV22HB  ",
+      "  BH22EVVV22HB  ",
+      "   BHH2222HHB   ",
+      "   BBCCCCCCBB   ",
+      "  B33BCCCCB33B  ",
+      " B344BBCCBB443B ",
+      " B344BCCCCB443B ",
+      " BB33BCCCCB33BB ",
+      "  BB B5555B BB  ",
+      "     B5555B     ",
+      "    B666666B    ",
+      "    BBBBBBBB    "
+    ];
+
+    function makeSpriteTexture(palette) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext("2d");
+
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const key = alienArt[y][x];
+          if (key !== " ") {
+            ctx.fillStyle = palette[key] || "#fff";
+            ctx.fillRect(x * 4, y * 4, 4, 4);
+          }
         }
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      return texture;
     }
 
-    // Lampadaires colorés
-    for (let i = 0; i < 6; i++) {
-        const side = i % 2 === 0 ? -1 : 1;
-        const z = 10 - i * 16;
-
-        const pole = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.09, 0.14, 5.5),
-            new THREE.MeshStandardMaterial({ color: 0x292a35, metalness: 0.6 })
-        );
-        pole.position.set(side * 8, 2.75, z);
-        environmentGroup.add(pole);
-
-        const lamp = new THREE.PointLight(
-            i % 2 === 0 ? 0xffa64d : 0x8b75ff,
-            2.2,
-            20
-        );
-        lamp.position.set(side * 8, 5.5, z);
-        environmentGroup.add(lamp);
-
-        const glow = new THREE.Mesh(
-            new THREE.SphereGeometry(0.25, 10, 10),
-            new THREE.MeshBasicMaterial({
-                color: i % 2 === 0 ? 0xffbd68 : 0xa18dff
-            })
-        );
-        glow.position.copy(lamp.position);
-        environmentGroup.add(glow);
-    }
-
-    // Soucoupe volante au fond de la rue
-    const ufoGroup = new THREE.Group();
-
-    const hull = new THREE.Mesh(
-        new THREE.CylinderGeometry(3.5, 4.5, 1.3, 24),
-        new THREE.MeshStandardMaterial({
-            color: 0x71808c,
-            metalness: 0.8,
-            roughness: 0.25
-        })
-    );
-
-    const dome = new THREE.Mesh(
-        new THREE.SphereGeometry(2, 18, 14),
-        new THREE.MeshStandardMaterial({
-            color: 0x43ffb0,
-            emissive: 0x116644,
-            transparent: true,
-            opacity: 0.85
-        })
-    );
-    dome.position.y = 0.8;
-    dome.scale.y = 0.55;
-
-    const ufoLight = new THREE.PointLight(0x39ff9b, 3, 22);
-    ufoLight.position.y = -1;
-
-    ufoGroup.add(hull, dome, ufoLight);
-    ufoGroup.position.set(0, 2, -60);
-    environmentGroup.add(ufoGroup);
-
-    interactables.push({
-        mesh: hull,
-        type: 'exit',
-        hint: "Appuyez sur [E] pour embarquer dans la soucoupe"
+    const alienTexture = makeSpriteTexture({
+      B: "#07110b", H: "#183528", 2: "#39ff75", E: "#07110b",
+      W: "#ff4a4a", V: "#a91c27", C: "#788c87",
+      3: "#334b46", 4: "#243a35", 5: "#738a83", 6: "#101615"
     });
 
-    player.position.set(0, playerHeight, 25);
-    setUI("3. La rue", "#a58bff", "Courez jusqu'à votre soucoupe volante !");
-}
+    function makeHumanTexture(hairColor) {
+      return makeSpriteTexture({
+        B: "#15100e", H: hairColor, 2: "#f2c6a0", E: "#161616",
+        W: "#fff", V: "#777", C: "#e6ecee",
+        3: "#dce5e8", 4: "#a9b6bb", 5: "#263846", 6: "#101010"
+      });
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(
+        55, window.innerWidth / window.innerHeight, 0.1, 300
+      );
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      document.body.appendChild(renderer.domElement);
+
+      player = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: alienTexture, transparent: true })
+      );
+      player.scale.set(1.8, 1.8, 1);
+      scene.add(player);
+
+      window.addEventListener("resize", resize);
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+
+      buildStage(0);
+      animate();
+    }
+
+    function resize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onKeyDown(event) {
+      const key = event.key.toLowerCase();
+
+      if (key === " " || key.startsWith("arrow")) event.preventDefault();
+      keys[key] = true;
+
+      if (key === "e" && !event.repeat) {
+        if (dialogueOpen) {
+          closeDialogue();
+        } else if (activeThing) {
+          if (activeThing.kind === "exit") nextStage();
+          if (activeThing.kind === "npc") openDialogue(activeThing.data);
+        }
+      }
+    }
+
+    function onKeyUp(event) {
+      keys[event.key.toLowerCase()] = false;
+    }
+
+    function clearStage() {
+      for (const obj of [...scene.children]) {
+        if (obj !== player) scene.remove(obj);
+      }
+      interactables.length = 0;
+      npcs.length = 0;
+      activeThing = null;
+      hint.style.display = "none";
+    }
+
+    function addFloor(color, width = 40, depth = 40, z = 0) {
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(width, depth),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.95 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.z = z;
+      floor.receiveShadow = true;
+      scene.add(floor);
+    }
+
+    function addBox(x, y, z, w, h, d, color, options = {}) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({
+          color,
+          roughness: options.roughness ?? 0.8,
+          metalness: options.metalness ?? 0
+        })
+      );
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      return mesh;
+    }
+
+    function addExit(x, y, z, text) {
+      interactables.push({
+        kind: "exit",
+        position: new THREE.Vector3(x, y, z),
+        text
+      });
+    }
+
+    function addNPC(name, text, x, z, hair) {
+      const npc = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: makeHumanTexture(hair),
+          transparent: true
+        })
+      );
+      npc.scale.set(1.8, 1.8, 1);
+      npc.position.set(x, playerHeight, z);
+      scene.add(npc);
+      npcs.push({ name, text, position: npc.position });
+    }
+
+    function setLevel(name, color, description) {
+      uiName.textContent = name;
+      uiName.style.color = color;
+      document.getElementById("ui").style.borderColor = color;
+      uiDesc.textContent = description;
+    }
+
+    function buildStage(number) {
+      stage = number;
+      clearStage();
+
+      if (stage === 0) buildCave();
+      else if (stage === 1) buildLab();
+      else if (stage === 2) buildStreet();
+      else buildMars();
+    }
+
+    function buildCave() {
+      scene.background = new THREE.Color(0x11131b);
+      scene.fog = new THREE.FogExp2(0x11131b, 0.035);
+      scene.add(new THREE.AmbientLight(0x55586a, 1.1));
+      addFloor(0x302d31, 30, 30);
+
+      // Murs de la cave
+      addBox(0, 5, -12, 24, 10, 1, 0x25242a);
+      addBox(-12, 5, 0, 1, 10, 25, 0x222128);
+      addBox(12, 5, 0, 1, 10, 25, 0x222128);
+
+      // Fenêtre bleutée et lumière qui passe à travers les barreaux
+      const windowGlow = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.5, 2.7),
+        new THREE.MeshBasicMaterial({
+          color: 0x9dccff,
+          transparent: true,
+          opacity: 0.85
+        })
+      );
+      windowGlow.position.set(-6, 5.5, -11.42);
+      scene.add(windowGlow);
+
+      const light = new THREE.SpotLight(0x91c5ff, 55, 32, Math.PI / 3, 0.6);
+      light.position.set(-6, 6, -10.6);
+      light.target.position.set(-1, 0, -1);
+      scene.add(light, light.target);
+
+      for (let i = 0; i < 5; i++) {
+        addBox(-7.3 + i * 0.65, 5.5, -11.15, 0.12, 3, 0.18, 0x111318, {
+          metalness: 0.6
+        });
+      }
+      addBox(-6, 5.5, -11.15, 3.1, 0.12, 0.18, 0x111318);
+
+      // Traces de sang au sol
+      const bloodMaterial = new THREE.MeshBasicMaterial({
+        color: 0x94121d,
+        transparent: true,
+        opacity: 0.9
+      });
+
+      [[2, 0, 2, 1.5], [3.4, 0.7, 0.55, 1.1], [-1, -2, 0.5, 0.8]].forEach(
+        ([x, z, sx, sz]) => {
+          const stain = new THREE.Mesh(
+            new THREE.CircleGeometry(1, 20),
+            bloodMaterial
+          );
+          stain.rotation.x = -Math.PI / 2;
+          stain.position.set(x, 0.025, z);
+          stain.scale.set(sx, sz, 1);
+          scene.add(stain);
+        }
+      );
+
+      // Escalier vers l'étage
+      for (let i = 0; i < 7; i++) {
+        addBox(0, i * 0.35 + 0.2, -4.5 - i * 0.8, 3.4, 0.4, 1, 0x51494b);
+      }
+
+      player.position.set(-3, playerHeight, 5);
+      addExit(0, 1.2, -8, "Appuie sur E pour monter l'escalier.");
+      setLevel("1. La cave", "#9dccff", "Tu te réveilles dans une cellule. Trouve l'escalier.");
+    }
+
+    function buildLab() {
+      scene.background = new THREE.Color(0x101923);
+      scene.fog = new THREE.FogExp2(0x101923, 0.025);
+      scene.add(new THREE.AmbientLight(0xd5eaff, 0.9));
+      addFloor(0x58636a, 32, 32);
+
+      const ceilingLight = new THREE.PointLight(0xc8edff, 3, 25);
+      ceilingLight.position.set(0, 7, -2);
+      scene.add(ceilingLight);
+
+      // Bureau : passe par la gauche ou la droite pour le contourner.
+      addBox(0, 0.7, -1.5, 7, 1.4, 2.3, 0x392f29);
+
+      for (let i = 0; i < 3; i++) {
+        const screen = addBox(-2 + i * 2, 1.8, -2, 1.2, 0.85, 0.12, 0x15212a);
+        screen.material.emissive = new THREE.Color(0x087a9c);
+        screen.material.emissiveIntensity = 0.9;
+      }
+
+      addNPC(
+        "Kelly",
+        "Le sujet vert s'est réveillé… tu as entendu du bruit ?",
+        -2,
+        -4,
+        "#d5a33c"
+      );
+      addNPC(
+        "Jessica",
+        "Chut ! Vérifie la porte de la cave. Je surveille le couloir.",
+        2,
+        -4,
+        "#9e382e"
+      );
+
+      const door = addBox(0, 2.2, -10, 3.5, 4.4, 0.4, 0x294455);
+      door.material.emissive = new THREE.Color(0x081522);
+
+      const exitLight = new THREE.PointLight(0xffc35a, 2, 9);
+      exitLight.position.set(0, 4, -8.5);
+      scene.add(exitLight);
+
+      player.position.set(0, playerHeight, 7);
+      addExit(0, 1.2, -10, "Appuie sur E pour sortir dans la rue.");
+      setLevel("2. Le laboratoire", "#79d5ff", "Contourne le bureau et évite les scientifiques.");
+    }
+
+    function buildStreet() {
+      scene.background = new THREE.Color(0x080916);
+      scene.fog = new THREE.FogExp2(0x080916, 0.018);
+      scene.add(new THREE.AmbientLight(0x49415d, 0.75));
+
+      addFloor(0x191820, 24, 120, -25);
+
+      // Trottoirs
+      for (const side of [-1, 1]) {
+        addBox(side * 13, 0.1, -25, 3, 0.2, 115, 0x393743);
+      }
+
+      // Lignes au milieu de la route
+      for (let i = 0; i < 16; i++) {
+        addBox(0, 0.03, 12 - i * 7, 0.16, 0.025, 2.2, 0xc8c3ad);
+      }
+
+      // Immeubles
+      for (let i = 0; i < 6; i++) {
+        const z = 12 - i * 18;
+        const height = 15 + (i % 3) * 3;
+
+        for (const side of [-1, 1]) {
+          addBox(side * 18, height / 2, z, 10, height, 15,
+            side < 0 ? 0x211e2c : 0x252532);
+
+          for (let row = 0; row < 3; row++) {
+            const windowMesh = new THREE.Mesh(
+              new THREE.PlaneGeometry(1.1, 1.5),
+              new THREE.MeshBasicMaterial({
+                color: (i + row) % 2 ? 0x79bfff : 0xffc267
+              })
+            );
+            windowMesh.position.set(side * 12.9, 5 + row * 2.6, z + row * 2);
+            windowMesh.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+            scene.add(windowMesh);
+          }
+        }
+      }
+
+      // Lampadaires
+      for (let i = 0; i < 6; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const z = 10 - i * 16;
+        const color = i % 2 === 0 ? 0xffad55 : 0x927bff;
+
+        const pole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.09, 0.14, 5.5),
+          new THREE.MeshStandardMaterial({ color: 0x30303b, metalness: 0.5 })
+        );
+        pole.position.set(side * 8, 2.75, z);
+        scene.add(pole);
+
+        const lamp = new THREE.PointLight(color, 2.7, 22);
+        lamp.position.set(side * 8, 5.5, z);
+        scene.add(lamp);
+
+        const bulb = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 10, 10),
+          new THREE.MeshBasicMaterial({ color })
+        );
+        bulb.position.copy(lamp.position);
+        scene.add(bulb);
+      }
+
+      // Soucoupe volante au bout de la rue
+      const ufo = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.2, 4.2, 1.2, 24),
+        new THREE.MeshStandardMaterial({
+          color: 0x82929c,
+          metalness: 0.8,
+          roughness: 0.25
+        })
+      );
+      ufo.add(body);
+
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(1.8, 18, 14),
+        new THREE.MeshStandardMaterial({
+          color: 0x42ffae,
+          emissive: 0x12633e,
+          transparent: true,
+          opacity: 0.86
+        })
+      );
+      dome.position.y = 0.75;
+      dome.scale.y = 0.55;
+      ufo.add(dome);
+
+      const ufoLight = new THREE.PointLight(0x39ff9b, 4, 24);
+      ufoLight.position.y = -0.8;
+      ufo.add(ufoLight);
+
+      ufo.position.set(0, 2, -48);
+      scene.add(ufo);
+
+      player.position.set(0, playerHeight, 25);
+      addExit(0, 1.2, -48, "Appuie sur E pour embarquer dans la soucoupe.");
+      setLevel("3. La rue", "#b29aff", "Cours jusqu'à ta soucoupe volante !");
+    }
+
+    function buildMars() {
+      scene.background = new THREE.Color(0xa9573f);
+      scene.fog = new THREE.Fog(0xa9573f, 25, 100);
+      scene.add(new THREE.AmbientLight(0xffc2a1, 1.2));
+
+      const sun = new THREE.DirectionalLight(0xff9a70, 2.4);
+      sun.position.set(-12, 20, -10);
+      scene.add(sun);
+
+      addFloor(0x9e4d34, 100, 100);
+
+      // Rochers martiens
+      for (let i = 0; i < 18; i++) {
+        const rock = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(0.7 + (i % 3) * 0.35, 0),
+          new THREE.MeshStandardMaterial({ color: i % 2 ? 0x733c30 : 0xc06b4b })
+        );
+        rock.position.set((i % 2 ? 1 : -1) * (5 + i % 6), 0.5, -12 + i * 2);
+        rock.rotation.set(i * 0.2, i, i * 0.3);
+        scene.add(rock);
+      }
+
+      const ufo = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.2, 4.2, 1.2, 24),
+        new THREE.MeshStandardMaterial({ color: 0x82929c, metalness: 0.7 })
+      );
+      ufo.position.set(5, 0.7, -5);
+      scene.add(ufo);
+
+      player.position.set(0, playerHeight, 5);
+      setLevel("4. Mars — victoire !", "#ffd078", "Tu as échappé aux humains et tu es rentré chez toi. 👽");
+    }
+
+    function openDialogue(person) {
+      dialogueOpen = true;
+      document.getElementById("dialogue-name").textContent = person.name;
+      document.getElementById("dialogue-text").textContent = person.text;
+      dialogue.style.display = "block";
+      hint.style.display = "none";
+    }
+
+    function closeDialogue() {
+      dialogueOpen = false;
+      dialogue.style.display = "none";
+    }
+
+    function nextStage() {
+      if (changingStage) return;
+      changingStage = true;
+      fade.style.opacity = "1";
+
+      setTimeout(() => {
+        buildStage(Math.min(stage + 1, 3));
+        fade.style.opacity = "0";
+        changingStage = false;
+      }, 550);
+    }
+
+    function updateMovement(delta) {
+      if (dialogueOpen || changingStage || stage === 3) return;
+
+      let dx = 0;
+      let dz = 0;
+
+      if (keys["z"] || keys["arrowup"]) dz -= 1;
+      if (keys["s"] || keys["arrowdown"]) dz += 1;
+      if (keys["q"] || keys["arrowleft"]) dx -= 1;
+      if (keys["d"] || keys["arrowright"]) dx += 1;
+
+      const moving = dx !== 0 || dz !== 0;
+
+      if (moving) {
+        const length = Math.hypot(dx, dz);
+        player.position.x += (dx / length) * speed * delta;
+        player.position.z += (dz / length) * speed * delta;
+      }
+
+      if (keys[" "] && !jumping) {
+        velocityY = jumpPower;
+        jumping = true;
+      }
+
+      if (jumping) {
+        player.position.y += velocityY * delta;
+        velocityY -= gravity * delta;
+
+        if (player.position.y <= playerHeight) {
+          player.position.y = playerHeight;
+          velocityY = 0;
+          jumping = false;
+        }
+      } else {
+        player.position.y = playerHeight + (moving ? Math.abs(Math.sin(elapsed * 12)) * 0.08 : 0);
+      }
+
+      // Limites de déplacement pour rester dans la zone de jeu
+      player.position.x = THREE.MathUtils.clamp(player.position.x, -10, 10);
+      if (stage === 2) {
+        player.position.z = THREE.MathUtils.clamp(player.position.z, -52, 32);
+      } else {
+        player.position.z = THREE.MathUtils.clamp(player.position.z, -10, 12);
+      }
+
+      updateInteractions();
+    }
+
+    function updateInteractions() {
+      activeThing = null;
+      let closest = 2.8;
+
+      for (const item of interactables) {
+        const distance = player.position.distanceTo(item.position);
+        if (distance < closest) {
+          closest = distance;
+          activeThing = item;
+        }
+      }
+
+      for (const npc of npcs) {
+        const distance = player.position.distanceTo(npc.position);
+        if (distance < closest) {
+          closest = distance;
+          activeThing = { kind: "npc", data: npc };
+        }
+      }
+
+      if (activeThing) {
+        hint.textContent = activeThing.kind === "npc"
+          ? `Appuie sur E pour écouter ${activeThing.data.name}`
+          : activeThing.text;
+        hint.style.display = "block";
+      } else {
+        hint.style.display = "none";
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const delta = Math.min(clock.getDelta(), 0.04);
+      elapsed += delta;
+
+      updateMovement(delta);
+
+      const target = new THREE.Vector3(
+        player.position.x,
+        player.position.y + 4.5,
+        player.position.z + 8
+      );
+
+      camera.position.lerp(target, 0.09);
+      camera.lookAt(player.position.x, player.position.y, player.position.z);
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
+</body>
+</html>
