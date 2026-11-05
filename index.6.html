@@ -40,6 +40,7 @@ canvas { display: block; }
 #dialogue-name { color: #e5c35a; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
 #fade-screen { position: absolute; inset: 0; background: black; z-index: 100; opacity: 1; pointer-events: none; transition: opacity 1s; }
 </style>
+<!-- Utilisation de Three.js r128 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -74,7 +75,7 @@ const alienArt = [
 "  BB B5555B BB  ","     B5555B     ","    B666666B    ","    BBBBBBBB    "];
 const alienPal = {B:'#000',H:'#1a252f',2:'#2ecc71',E:'#000',W:'#e74c3c',V:'#c0392b',C:'#7f8c8d',3:'#34495e',4:'#2c3e50',5:'#95a5a6',6:'#111'};
 
-// Art PNJ (Scientifiques/Citoyens avec lunettes et détails)
+// Art PNJ (Scientifiques/Citoyens)
 const npcArt = [
 "      BBBB      ","    BHHHHHHB    ","   BHH2222HHB   ","  BH2GGEEGG2HB  ",
 "  BH2GGEEGG2HB  ","  BH22EVVV22HB  ","   BHH2222HHB   ","   BBCCCCCCBB   ",
@@ -84,8 +85,298 @@ function getPal(hair, clothes, glasses='#333') { return {B:'#111',H:hair,2:'#FFD
 
 function createTex(art, pal) {
     const c = document.createElement('canvas'); c.width = 64; c.height = 64; const ctx = c.getContext('2d');
-    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(art[y][x]!==' ') { ctx.fillStyle=pal[art[y][x]]; ctx.fillRect(x*4,y*4,4,4); }
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(art[y][x]!==' ') { ctx.fillStyle=pal[art[y][x]] || '#fff'; ctx.fillRect(x*4,y*4,4,4); }
     const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
 }
 
-// Générateur de sang réaliste (flaques
+// Générateur de sang réaliste (flaques rondes)
+function getBloodTex() {
+    const c = document.createElement('canvas'); c.width=128; c.height=128; const ctx = c.getContext('2d');
+    ctx.fillStyle='#600';
+    ctx.beginPath(); ctx.arc(64, 64, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(40, 40, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(90, 80, 25, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(100, 40, 15, 0, Math.PI * 2); ctx.fill();
+    const t = new THREE.CanvasTexture(c); return t;
+}
+
+function init() {
+    scene = new THREE.Scene(); scene.add(environmentGroup);
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+    
+    renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    player = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(alienArt, alienPal) }));
+    player.scale.set(2.2, 2.2, 1); scene.add(player);
+    playerLight = new THREE.PointLight(0x2ecc71, 1.2, 7); scene.add(playerLight);
+
+    window.addEventListener('keydown', e => {
+        let k = e.key.toLowerCase(); if(k===' ') { e.preventDefault(); keys.space=true; }
+        if(keys[k]!==undefined) keys[k]=true;
+        if(k==='r' && !e.repeat) restartGame();
+        
+        if(k==='e' && !e.repeat) {
+            if(isDialogueOpen) closeDialogue();
+            else if(activeInteractable) {
+                if(activeInteractable.type==='exit') nextStage();
+                if(activeInteractable.type==='npc') openDialogue(activeInteractable.data);
+                if(activeInteractable.type==='break') {
+                    // POUVOIR ALIEN : Télékinésie pour exploser la grille
+                    const flash = new THREE.PointLight(0x39ff14, 15, 20);
+                    flash.position.copy(activeInteractable.mesh.position);
+                    environmentGroup.add(flash);
+                    setTimeout(() => environmentGroup.remove(flash), 150);
+                    
+                    activeInteractable.mesh.visible = false; 
+                    activeInteractable.mesh.position.y = -100; // Dégage la collision
+                    
+                    // Crée le vrai trigger de sortie
+                    const exitTrig = new THREE.Mesh(new THREE.BoxGeometry(4,4,2), new THREE.MeshBasicMaterial({visible:false}));
+                    exitTrig.position.set(0,3,-9); environmentGroup.add(exitTrig);
+                    interactables.push({ mesh: exitTrig, type: 'exit', hint: "Appuyez sur [E] pour monter les escaliers" });
+                    
+                    activeInteractable = null;
+                    document.getElementById('interaction-hint').style.display = 'none';
+                }
+            }
+        }
+    });
+    window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys[k]!==undefined) keys[k]=false; if(k===' ') keys.space=false; });
+    
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    
+    loadStage(currentStage); 
+    
+    // Positionnement immédiat de la caméra pour éviter l'écran noir de départ
+    camera.position.set(player.position.x, player.position.y + 6, player.position.z + 10);
+    animate();
+}
+
+// CORRECTION CRITIQUE DU BUG : Utilisation d'une boucle while au lieu de .clear()
+function clearEnv() { 
+    while(environmentGroup.children.length > 0) {
+        environmentGroup.remove(environmentGroup.children[0]);
+    }
+    npcs=[]; interactables=[]; activeInteractable=null; particles=null; 
+}
+
+function setUI(name, col, desc) { document.getElementById('level-name').innerText=name; document.getElementById('level-name').style.color=col; document.getElementById('ui-layer').style.borderColor=col; document.getElementById('level-desc').innerText=desc; }
+
+function addParticles(colorHex) {
+    const partGeo = new THREE.BufferGeometry();
+    const pCount = 300; const pArray = new Float32Array(pCount * 3);
+    for(let i=0; i<pCount*3; i++) pArray[i] = (Math.random() - 0.5) * 40;
+    partGeo.setAttribute('position', new THREE.BufferAttribute(pArray, 3));
+    const partMat = new THREE.PointsMaterial({color: colorHex, size: 0.15, transparent: true, opacity: 0.6});
+    particles = new THREE.Points(partGeo, partMat); environmentGroup.add(particles);
+}
+
+// GESTION DES COLLISIONS
+function canMove(nx, nz) {
+    if (currentStage === 0) {
+        if(nx < -9 || nx > 9 || nz < -9 || nz > 9) return false;
+        // Collision du lit
+        if(nx > 2 && nx < 6 && nz > -6.5 && nz < -1.5) return false; 
+    }
+    if (currentStage === 1) {
+        if(nx < -14 || nx > 14 || nz < -14 || nz > 14) return false;
+        if(nx > -5.5 && nx < 5.5 && nz > -4 && nz < 0) return false; // Bureau Labo
+    }
+    if (currentStage === 2) {
+        if(nx < -7 || nx > 7) return false; // Trottoirs (Bâtiments)
+        if(nz > 30 || nz < -68) return false; // Limites rue
+    }
+    return true;
+}
+
+function buildCave() {
+    clearEnv(); scene.background = new THREE.Color(0x050505); scene.fog = new THREE.FogExp2(0x050505, 0.04);
+    environmentGroup.add(new THREE.AmbientLight(0x222233, 1.5));
+    
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; environmentGroup.add(floor);
+    
+    // Murs
+    const wallMat = new THREE.MeshStandardMaterial({color: 0x111111});
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 2), wallMat); backWall.position.set(0,5,-10); environmentGroup.add(backWall);
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 20), wallMat); rightWall.position.set(10,5,0); environmentGroup.add(rightWall);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 20), wallMat); leftWall.position.set(-10,5,0); environmentGroup.add(leftWall);
+
+    // Lumière divine par les barreaux
+    const winLight = new THREE.SpotLight(0x6699ff, 40, 40, Math.PI/4, 0.5, 1);
+    winLight.position.set(-9, 8, -2); winLight.target.position.set(5, 0, 0); winLight.castShadow=true;
+    winLight.shadow.mapSize.width = 1024; winLight.shadow.mapSize.height = 1024;
+    environmentGroup.add(winLight); environmentGroup.add(winLight.target);
+    for(let i=0; i<4; i++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.3, 5, 0.3), new THREE.MeshStandardMaterial({color:0x000}));
+        bar.position.set(-8, 5, -3 + i*2); bar.castShadow=true; environmentGroup.add(bar);
+    }
+    
+    // Table d'opération / Lit d'expérience
+    const bedGrp = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 5), new THREE.MeshStandardMaterial({color: 0x444444, metalness: 0.8})); frame.position.y = 0.5;
+    const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.4, 4.8), new THREE.MeshStandardMaterial({color: 0x88aacc})); mattress.position.y = 1.2;
+    bedGrp.add(frame, mattress); bedGrp.position.set(4, 0, -4); environmentGroup.add(bedGrp);
+
+    const surgLight = new THREE.PointLight(0xffffff, 1, 10); surgLight.position.set(4, 5, -4); environmentGroup.add(surgLight);
+    
+    // Vraie tache de sang texturée
+    const blood = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshStandardMaterial({map: getBloodTex(), transparent: true, opacity: 0.85, roughness: 0.2}));
+    blood.rotation.x = -Math.PI/2; blood.position.set(2, 0.02, -1); environmentGroup.add(blood);
+
+    addParticles(0x6699ff);
+
+    // Escaliers & Grille verrouillée
+    for(let i=0; i<6; i++) {
+        const step = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 1.5), new THREE.MeshStandardMaterial({color:0x222}));
+        step.position.set(0, i*0.5+0.25, -7-i*0.5); environmentGroup.add(step);
+    }
+    
+    const lockDoor = new THREE.Mesh(new THREE.BoxGeometry(4, 5, 0.2), new THREE.MeshStandardMaterial({color: 0x333333, wireframe:true}));
+    lockDoor.position.set(0, 2.5, -8); environmentGroup.add(lockDoor);
+    
+    interactables.push({ mesh: lockDoor, type: 'break', hint: "Appuyez sur [E] pour utiliser la TÉLÉKINÉSIE et détruire la grille" });
+
+    // Spawn à côté du lit
+    player.position.set(0, playerHeight, -4); 
+    setUI("1. La Salle d'Expérience", "#7f8c8d", "Échappe-toi. Sers-toi de ton pouvoir sur la grille.");
+    document.getElementById('fade-screen').style.opacity = '0';
+}
+
+function buildLab() {
+    clearEnv(); scene.background = new THREE.Color(0x0a1015); scene.fog = new THREE.FogExp2(0x0a1015, 0.03);
+    environmentGroup.add(new THREE.AmbientLight(0xffffff, 0.6));
+    
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x445566 }));
+    floor.rotation.x = -Math.PI/2; environmentGroup.add(floor);
+
+    // Bureau Central
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(10, 2, 3), new THREE.MeshStandardMaterial({color: 0x222}));
+    desk.position.set(0, 1, -2); desk.castShadow=true; environmentGroup.add(desk);
+    
+    const screen1 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 0.2), new THREE.MeshStandardMaterial({color: 0x111, emissive:0x004488}));
+    screen1.position.set(-2, 2.5, -2); environmentGroup.add(screen1);
+    const screen2 = screen1.clone(); screen2.position.set(2, 2.5, -2); environmentGroup.add(screen2);
+
+    addParticles(0xaaddff);
+
+    // Gardes Scientifiques (Blouses blanches #ffffff)
+    spawnGuard("Kelly", -4, -4, '#e89a83', '#ffffff', 1);
+    spawnGuard("Jessica", 4, -4, '#d7a4e8', '#ffffff', -1);
+
+    const exitDoor = new THREE.Mesh(new THREE.BoxGeometry(4, 5, 0.5), new THREE.MeshStandardMaterial({color: 0x334455}));
+    exitDoor.position.set(0, 2.5, -12); environmentGroup.add(exitDoor);
+    const exitLight = new THREE.PointLight(0x2ecc71, 1, 10); exitLight.position.set(0,4,-11); environmentGroup.add(exitLight);
+
+    interactables.push({ mesh: exitDoor, type: 'exit', hint: "Appuyez sur [E] pour fuir dans la rue" });
+    player.position.set(0, playerHeight, 10); setUI("2. Le Laboratoire", "#2980b9", "Évite les scientifiques et fuis !");
+}
+
+function buildStreet() {
+    clearEnv(); scene.background = new THREE.Color(0x050510); scene.fog = new THREE.FogExp2(0x050510, 0.04);
+    environmentGroup.add(new THREE.AmbientLight(0x202040, 0.8));
+    
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 100), new THREE.MeshStandardMaterial({ color: 0x111, roughness: 0.7 }));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow=true; environmentGroup.add(floor);
+
+    // Décors Urbains
+    for(let i=0; i<5; i++) {
+        const bldg = new THREE.Mesh(new THREE.BoxGeometry(10, 25, 15), new THREE.MeshStandardMaterial({color:0x0a0a0a}));
+        bldg.position.set(-15, 12.5, 15 - i*20); environmentGroup.add(bldg);
+        const bldg2 = bldg.clone(); bldg2.position.set(15, 12.5, 15 - i*20); environmentGroup.add(bldg2);
+
+        if (i < 4) {
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 5), new THREE.MeshStandardMaterial({color:0x222}));
+            pole.position.set(i%2===0 ? -8 : 8, 2.5, 10 - i*20); environmentGroup.add(pole);
+            const lamp = new THREE.PointLight(0xffaa33, 4, 25); lamp.position.set(pole.position.x, 5, pole.position.z);
+            lamp.castShadow = true; environmentGroup.add(lamp);
+        }
+    }
+
+    // Néon & Distributeur (Vie urbaine)
+    const neon = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), new THREE.MeshStandardMaterial({color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 2}));
+    neon.position.set(-9.9, 6, -10); neon.rotation.y = Math.PI / 2; environmentGroup.add(neon);
+    const neonLight = new THREE.PointLight(0xff00ff, 2, 15); neonLight.position.set(-8, 6, -10); environmentGroup.add(neonLight);
+
+    const vending = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, 1.5), new THREE.MeshStandardMaterial({color: 0x111, emissive: 0x00ffff, emissiveIntensity:0.5}));
+    vending.position.set(9, 1.5, 5); environmentGroup.add(vending);
+
+    // Citoyens aléatoires dans la rue (Vêtements bleus)
+    spawnGuard("Citoyen", -4, 5, '#8e44ad', '#3498db', -1, false);
+    spawnGuard("Citoyen", 4, -20, '#34495e', '#2c3e50', 1, false);
+
+    addParticles(0xffddaa);
+
+    // Soucoupe Volante 
+    const ufoGroup = new THREE.Group();
+    const hull = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 1.5, 32), new THREE.MeshStandardMaterial({color: 0x445566, metalness:0.9, roughness:0.2}));
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(2.5, 32, 16), new THREE.MeshStandardMaterial({color: 0x39ff14, emissive:0x113311, transparent:true, opacity:0.8}));
+    dome.position.y = 1; dome.scale.y = 0.6;
+    const ufoLight = new THREE.PointLight(0x39ff14, 5, 20); ufoLight.position.y = -1;
+    ufoGroup.add(hull, dome, ufoLight); ufoGroup.position.set(0, 1.5, -65); environmentGroup.add(ufoGroup);
+
+    interactables.push({ mesh: hull, type: 'exit', hint: "Appuyez sur [E] pour décoller vers Mars !" });
+    player.position.set(0, playerHeight, 25); setUI("3. La Rue", "#8e44ad", "Faufile-toi jusqu'à ta soucoupe volante.");
+}
+
+function buildMarsEnd() {
+    clearEnv(); scene.background = new THREE.Color(0x9c5038); scene.fog = new THREE.Fog(0x9c5038, 10, 50);
+    environmentGroup.add(new THREE.AmbientLight(0xffc2a0, 1));
+    const sun = new THREE.DirectionalLight(0xff9363, 2); sun.position.set(-20,30,-20); environmentGroup.add(sun);
+    
+    const floorGeo = new THREE.PlaneGeometry(100, 100, 30, 30);
+    const pos = floorGeo.attributes.position;
+    for(let i=0; i<pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i)*0.1)*Math.cos(pos.getY(i)*0.1)*2);
+    floorGeo.computeVertexNormals();
+    const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ color: 0x9a4930, flatShading:true }));
+    floor.rotation.x = -Math.PI/2; environmentGroup.add(floor);
+    
+    const ufo = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 1.5, 32), new THREE.MeshStandardMaterial({color: 0x445566}));
+    ufo.position.set(5, 0.75, -5); environmentGroup.add(ufo);
+
+    addParticles(0xffc2a0);
+
+    player.position.set(0, playerHeight, 5); setUI("4. Mars - Victoire", "#e67e22", "Évasion réussie. Appuie sur R pour rejouer.");
+}
+
+function spawnGuard(name, x, z, hair, clothes, dir, isHostile = true) {
+    const glasses = isHostile ? '#ffffff' : clothes;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(npcArt, getPal(hair, clothes, glasses)) }));
+    s.scale.set(2.2, 2.2, 1); s.position.set(x, playerHeight, z); environmentGroup.add(s);
+    npcs.push({ mesh:s, name:name, dir:dir, speed: 2.5, startX: x, limits: 6, isHostile: isHostile, text: "Fait un froid de canard ce soir..." });
+}
+
+function loadStage(idx) { 
+    if(idx===0) buildCave(); else if(idx===1) buildLab(); else if(idx===2) buildStreet(); else buildMarsEnd(); 
+    camera.position.set(player.position.x, player.position.y + 6, player.position.z + 10);
+}
+
+function nextStage() {
+    const s = document.getElementById('fade-screen'); s.style.opacity = '1';
+    setTimeout(() => { currentStage++; loadStage(currentStage); s.style.opacity = '0'; }, 1000);
+}
+function restartGame() {
+    const s = document.getElementById('fade-screen'); s.style.opacity = '1';
+    setTimeout(() => { currentStage = 0; loadStage(currentStage); s.style.opacity = '0'; }, 1000);
+}
+
+function caught() {
+    document.getElementById('alert-msg').style.display = 'block';
+    setTimeout(() => {
+        document.getElementById('alert-msg').style.display = 'none';
+        player.position.set(0, playerHeight, 10); 
+    }, 1500);
+}
+
+function openDialogue(data) {
+    isDialogueOpen = true; 
+    document.getElementById('dialogue-name').innerText = data.name;
+    document.getElementById('dialogue-text').innerText = data.text; 
+    document.getElementById('dialogue-box').style.display = 'block';
+    document.getElementById('interaction-hint').style.display = 'none';
+}
+function closeDialogue() { isDialogueOpen = false; document.getElementById
