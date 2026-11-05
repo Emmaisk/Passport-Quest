@@ -3,485 +3,246 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alien Escape - HD 2D</title>
-
+<title>Alien Escape - HD-2D</title>
 <style>
 * { box-sizing: border-box; }
-
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #000;
-    font-family: 'Georgia', serif;
-    user-select: none;
-}
-
+body { margin: 0; overflow: hidden; background: #000; font-family: 'Georgia', serif; user-select: none; }
 canvas { display: block; }
-
-#ui-layer {
-    position: absolute; top: 20px; left: 20px; color: white;
-    background: linear-gradient(135deg, rgba(20,15,10,.92), rgba(0,0,0,.72));
-    padding: 17px 25px; border-radius: 10px; border: 2px solid #555;
-    box-shadow: 0 4px 25px rgba(0,0,0,.5); z-index: 10;
-    transition: border-color .5s; backdrop-filter: blur(8px);
-}
-
-#level-name {
-    margin: 0 0 7px; text-transform: uppercase; letter-spacing: 3px;
-    font-size: 1.2rem; transition: color .5s;
-}
-
-#level-desc { color: #ddd; font-size: .9rem; font-style: italic; }
-
-#controls { margin-top: 13px; color: #aaa; font: 11px 'Segoe UI', sans-serif; }
-
-#interaction-hint {
-    position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,.85); color: white; padding: 12px 22px;
-    border-radius: 25px; font: 14px 'Segoe UI', sans-serif;
-    display: none; z-index: 15; border: 1px solid #ffffff88; text-align: center;
-}
-
-#dialogue-box {
-    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-    background: linear-gradient(to bottom, #303030, #151515); color: white;
-    padding: 20px 28px; border-radius: 10px; border: 2px solid #d4af37;
-    font-size: 1.05rem; display: none; box-shadow: 0 10px 30px rgba(0,0,0,.8);
-    z-index: 20; width: 65%; max-width: 720px; line-height: 1.5;
-}
-
-#dialogue-name { color: #e5c35a; font-weight: bold; margin-bottom: 8px; font-size: 1rem; text-transform: uppercase; }
-#dialogue-footer { margin-top: 12px; font: 11px 'Segoe UI', sans-serif; color: #aaa; }
-
-#fade-screen {
-    position: absolute; inset: 0; background: black; z-index: 100;
-    opacity: 0; pointer-events: none; transition: opacity 1s ease-in-out;
-}
+#ui-layer { position: absolute; top: 20px; left: 20px; color: white; background: linear-gradient(135deg, rgba(15,20,30,.95), rgba(0,0,0,.8)); padding: 15px 25px; border-radius: 8px; border: 2px solid #555; box-shadow: 0 5px 30px rgba(0,0,0,.8); z-index: 10; backdrop-filter: blur(5px); }
+#level-name { margin: 0 0 5px; text-transform: uppercase; letter-spacing: 3px; font-size: 1.3rem; text-shadow: 2px 2px 5px #000; }
+#level-desc { color: #ccc; font-size: 0.95rem; font-style: italic; margin: 0; }
+#controls { margin-top: 15px; color: #888; font: 12px 'Segoe UI', sans-serif; }
+#interaction-hint { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.85); color: white; padding: 12px 25px; border-radius: 25px; font: 15px 'Segoe UI', sans-serif; display: none; z-index: 15; border: 1px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+#dialogue-box { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: linear-gradient(to bottom, #2b2b2b, #111); color: white; padding: 20px 30px; border-radius: 8px; border: 2px solid #d4af37; font-size: 1.1rem; display: none; box-shadow: 0 10px 40px rgba(0,0,0,.9); z-index: 20; width: 60%; max-width: 700px; }
+#dialogue-name { color: #e5c35a; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+#dialogue-text { margin: 0; }
+#dialogue-footer { margin-top: 10px; font: 12px 'Segoe UI', sans-serif; color: #777; }
+#fade-screen { position: absolute; inset: 0; background: black; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 1s; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-
 <body>
 
 <div id="ui-layer">
-    <h2 id="level-name">Niveau 1</h2>
+    <h2 id="level-name">Niveau</h2>
     <p id="level-desc">Objectif</p>
-    <div id="controls">
-        Z Q S D : Déplacement<br>
-        ESPACE : Sauter<br>
-        E : Interagir
-    </div>
+    <div id="controls">Z Q S D : Déplacements | ESPACE : Sauter | E : Interagir</div>
 </div>
-
 <div id="interaction-hint">Appuyez sur [E]</div>
-
 <div id="dialogue-box">
     <div id="dialogue-name">Nom</div>
     <div id="dialogue-text">Texte</div>
     <div id="dialogue-footer">Appuyez sur E pour fermer</div>
 </div>
-
 <div id="fade-screen"></div>
 
 <script>
-let scene, camera, renderer, player, playerLight;
-let environmentGroup = new THREE.Group();
-
+let scene, camera, renderer, player, playerLight, environmentGroup = new THREE.Group();
 const keys = { z:false, q:false, s:false, d:false, e:false, space:false };
+let currentStage = 0, npcs = [], interactables = [], activeInteractable = null, isDialogueOpen = false;
+let velocityY = 0, isJumping = false, elapsed = 0, clock = new THREE.Clock();
+const gravity = 18, jumpStrength = 6, playerSpeed = 6, playerHeight = 1.15;
 
-let currentStage = 0; // 0: Cave, 1: Rue, 2: Mars
-let npcs = [];
-let interactables = []; // Objets de fin de niveau (Porte, Soupe)
-let activeInteractable = null;
-let isDialogueOpen = false;
-let isMoving = false;
+const charArt = [
+"      BBBB      ","    BHHHHHHB    ","   BHH2222HHB   ","  BH22EEEE22HB  ",
+"  BH22EWWV22HB  ","  BH22EVVV22HB  ","   BHH2222HHB   ","   BBCCCCCCBB   ",
+"  B33BCCCCB33B  "," B344BBCCBB443B "," B344BCCCCB443B "," BB33BCCCCB33BB ",
+"  BB B5555B BB  ","     B5555B     ","    B666666B    ","    BBBBBBBB    "];
+const alienPal = {B:'#000',H:'#1a252f',2:'#2ecc71',E:'#000',W:'#e74c3c',V:'#c0392b',C:'#7f8c8d',3:'#34495e',4:'#2c3e50',5:'#95a5a6',6:'#111'};
 
-let velocityY = 0;
-const gravity = 20;
-const jumpStrength = 7;
-let isJumping = false;
+function getPal(hair) { return {B:'#111',H:hair,2:'#FFDAB9',E:'#000',W:'#fff',V:'#aaa',C:'#ecf0f1',3:'#bdc3c7',4:'#95a5a6',5:'#34495e',6:'#111'}; }
 
-let clock = new THREE.Clock();
-let elapsed = 0;
-const playerSpeed = 6.5;
-const playerHeight = 1.15;
-
-const characterArt = [
-"      BBBB      ",
-"    BHHHHHHB    ",
-"   BHH2222HHB   ",
-"  BH22EEEE22HB  ",
-"  BH22EWWV22HB  ",
-"  BH22EVVV22HB  ",
-"   BHH2222HHB   ",
-"   BBCCCCCCBB   ",
-"  B33BCCCCB33B  ",
-" B344BBCCBB443B ",
-" B344BCCCCB443B ",
-" BB33BCCCCB33BB ",
-"  BB B5555B BB  ",
-"     B5555B     ",
-"    B666666B    ",
-"    BBBBBBBB    "
-];
-
-// Palette du joueur (Peau verte d'Alien)
-const playerPalette = {
-    B:'#000', H:'#2C3E50', 2:'#2ecc71', // 2 est la couleur de peau -> Vert !
-    E:'#000', W:'#e74c3c', V:'#c0392b', // Yeux rouges
-    C:'#7f8c8d', 3:'#34495e', 4:'#2c3e50',
-    5:'#95a5a6', 6:'#2C3E50'
-};
-
-function getNPCPalette(hair, clothes, pants) {
-    return {
-        B:'#111', H:hair, 2:'#FFDAB9', // Peau humaine
-        E:'#000', W:'#fff', V:'#aaa',
-        C:clothes, 3:clothes, 4:clothes,
-        5:pants, 6:'#333'
-    };
-}
-
-function createPixelTexture(artArray, palette) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64; canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    const pSize = 4;
-    for(let y=0; y<16; y++) {
-        for(let x=0; x<16; x++) {
-            const char = artArray[y][x];
-            if(char !== ' ') {
-                ctx.fillStyle = palette[char] || '#fff';
-                ctx.fillRect(x*pSize, y*pSize, pSize, pSize);
-            }
-        }
-    }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.magFilter = THREE.NearestFilter;
-    return texture;
+function createTex(art, pal) {
+    const c = document.createElement('canvas'); c.width = 64; c.height = 64; const ctx = c.getContext('2d');
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(art[y][x]!==' ') { ctx.fillStyle=pal[art[y][x]]; ctx.fillRect(x*4,y*4,4,4); }
+    const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
 }
 
 function init() {
-    scene = new THREE.Scene();
-    scene.add(environmentGroup);
-
+    scene = new THREE.Scene(); scene.add(environmentGroup);
     camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
     document.body.appendChild(renderer.domElement);
 
-    const playerTexture = createPixelTexture(characterArt, playerPalette);
-    player = new THREE.Sprite(new THREE.SpriteMaterial({ map:playerTexture }));
-    player.scale.set(2.2, 2.2, 1);
-    scene.add(player);
+    player = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(charArt, alienPal) }));
+    player.scale.set(2.2, 2.2, 1); scene.add(player);
+    playerLight = new THREE.PointLight(0x2ecc71, 1.2, 7); scene.add(playerLight);
 
-    playerLight = new THREE.PointLight(0x2ecc71, 0.8, 8); // Aura verte autour de l'alien
-    scene.add(playerLight);
-
-    window.addEventListener('keydown', (e) => {
-        const k = e.key.toLowerCase();
-        if(k === ' ') { e.preventDefault(); keys.space = true; }
-        if(keys.hasOwnProperty(k)) keys[k] = true;
-
-        if(k === 'e' && !e.repeat) {
-            if(isDialogueOpen) {
-                closeDialogue();
-            } else if(activeInteractable) {
-                if(activeInteractable.type === 'door') nextStage();
-                if(activeInteractable.type === 'soup') nextStage();
-                if(activeInteractable.type === 'npc') openDialogue(activeInteractable.data);
+    window.addEventListener('keydown', e => {
+        let k = e.key.toLowerCase(); if(k===' ') { e.preventDefault(); keys.space=true; }
+        if(keys[k]!==undefined) keys[k]=true;
+        if(k==='e' && !e.repeat) {
+            if(isDialogueOpen) closeDialogue();
+            else if(activeInteractable) {
+                if(activeInteractable.type==='exit') nextStage();
+                if(activeInteractable.type==='npc') openDialogue(activeInteractable.data);
             }
         }
     });
-
-    window.addEventListener('keyup', (e) => {
-        const k = e.key.toLowerCase();
-        if(keys.hasOwnProperty(k)) keys[k] = false;
-        if(k === ' ') keys.space = false;
-    });
-
-    loadStage(currentStage);
-    animate();
+    window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys[k]!==undefined) keys[k]=false; if(k===' ') keys.space=false; });
+    
+    loadStage(currentStage); animate();
 }
 
-function clearEnvironment() {
-    while(environmentGroup.children.length > 0) environmentGroup.remove(environmentGroup.children[0]);
-    npcs = [];
-    interactables = [];
-    activeInteractable = null;
-}
+function clearEnv() { environmentGroup.clear(); npcs=[]; interactables=[]; activeInteractable=null; }
+function setUI(name, col, desc) { document.getElementById('level-name').innerText=name; document.getElementById('level-name').style.color=col; document.getElementById('ui-layer').style.borderColor=col; document.getElementById('level-desc').innerText=desc; }
 
-function updateUI(name, color, desc) {
-    document.getElementById('level-name').innerText = name;
-    document.getElementById('level-name').style.color = color;
-    document.getElementById('ui-layer').style.borderColor = color;
-    document.getElementById('level-desc').innerText = desc;
-}
-
-// --- NIVEAU 1 : LA CAVE ---
 function buildCave() {
-    clearEnvironment();
-    scene.background = new THREE.Color(0x050505);
-    scene.fog = new THREE.Fog(0x050505, 5, 20);
+    clearEnv(); scene.background = new THREE.Color(0x020202); scene.fog = new THREE.FogExp2(0x020202, 0.05);
+    environmentGroup.add(new THREE.AmbientLight(0x111122, 1.5));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; environmentGroup.add(floor);
+    
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 2), new THREE.MeshStandardMaterial({color: 0x0a0a0a}));
+    wall.position.set(0,5,-10); wall.receiveShadow=true; environmentGroup.add(wall);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.1);
-    environmentGroup.add(ambient);
+    // Barreaux et Lumière
+    const winLight = new THREE.SpotLight(0x88bbff, 15, 40, Math.PI/6, 0.2, 1);
+    winLight.position.set(-8, 6, -2); winLight.target.position.set(5, 0, 0); winLight.castShadow=true;
+    environmentGroup.add(winLight); environmentGroup.add(winLight.target);
+    for(let i=0; i<3; i++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 0.2), new THREE.MeshStandardMaterial({color:0x000}));
+        bar.position.set(-6, 5, -2 + i*1.5); bar.castShadow=true; environmentGroup.add(bar);
+    }
+    // Sang
+    const blood = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshStandardMaterial({color:0x660000}));
+    blood.rotation.x = -Math.PI/2; blood.position.set(2, 0.02, 0); environmentGroup.add(blood);
 
-    // Sol de la cave
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
-    floor.rotation.x = -Math.PI/2;
-    environmentGroup.add(floor);
+    // Escaliers
+    for(let i=0; i<6; i++) {
+        const step = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1), new THREE.MeshStandardMaterial({color:0x222}));
+        step.position.set(0, i*0.5+0.25, -6-i*0.5); environmentGroup.add(step);
+    }
+    const doorTrig = new THREE.Mesh(new THREE.BoxGeometry(3,4,1), new THREE.MeshBasicMaterial({visible:false}));
+    doorTrig.position.set(0,3,-8); environmentGroup.add(doorTrig);
+    interactables.push({ mesh: doorTrig, type: 'exit', hint: "Appuyez sur [E] pour monter discrètement" });
 
-    // Murs
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 2), wallMat);
-    backWall.position.set(0, 5, -10);
-    environmentGroup.add(backWall);
-
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 20), wallMat);
-    leftWall.position.set(-10, 5, 0);
-    environmentGroup.add(leftWall);
-
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 20), wallMat);
-    rightWall.position.set(10, 5, 0);
-    environmentGroup.add(rightWall);
-
-    // La Porte (Sortie)
-    const door = new THREE.Mesh(new THREE.BoxGeometry(3, 5, 0.5), new THREE.MeshStandardMaterial({ color: 0x5c3a21 }));
-    door.position.set(0, 2.5, -9);
-    environmentGroup.add(door);
-
-    // Lumière au dessus de la porte
-    const doorLight = new THREE.PointLight(0xffaa00, 1.5, 10);
-    doorLight.position.set(0, 6, -8);
-    environmentGroup.add(doorLight);
-
-    interactables.push({ mesh: door, type: 'door', hint: "Appuyez sur [E] pour défoncer la porte" });
-
-    player.position.set(0, playerHeight, 5);
-    updateUI("La Cave", "#555", "Échappez-vous de cette prison terrienne.");
+    player.position.set(-3, playerHeight, 5); setUI("1. La Cellule", "#555", "Échappez-vous de la cave.");
 }
 
-// --- NIVEAU 2 : LA RUE TERRIENNE ---
+function buildLab() {
+    clearEnv(); scene.background = new THREE.Color(0x0a1015); scene.fog = new THREE.FogExp2(0x0a1015, 0.03);
+    environmentGroup.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x445566 }));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; environmentGroup.add(floor);
+
+    // Bureau et Ordis
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3), new THREE.MeshStandardMaterial({color: 0x222}));
+    desk.position.set(0, 0.75, -2); desk.castShadow=true; desk.receiveShadow=true; environmentGroup.add(desk);
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 0.2), new THREE.MeshStandardMaterial({color: 0x111, emissive:0x004488}));
+    screen.position.set(-1, 2, -2); environmentGroup.add(screen);
+    const screen2 = screen.clone(); screen2.position.set(1, 2, -2); environmentGroup.add(screen2);
+
+    spawnNPC("Kelly", "Le sujet vert a l'air instable aujourd'hui.", -2, -4, '#f1c40f');
+    spawnNPC("Jessica", "On fera des prélèvements sanguins demain matin.", 2, -4, '#c0392b');
+
+    const exitDoor = new THREE.Mesh(new THREE.BoxGeometry(4, 5, 0.5), new THREE.MeshStandardMaterial({color: 0x334455}));
+    exitDoor.position.set(0, 2.5, -10); environmentGroup.add(exitDoor);
+    const exitLight = new THREE.PointLight(0x00ff00, 1, 10); exitLight.position.set(0,4,-9); environmentGroup.add(exitLight);
+
+    interactables.push({ mesh: exitDoor, type: 'exit', hint: "Appuyez sur [E] pour fuir dans la rue" });
+    player.position.set(0, playerHeight, 8); setUI("2. Le Laboratoire", "#2980b9", "Contournez les scientifiques sans bruit.");
+}
+
 function buildStreet() {
-    clearEnvironment();
-    scene.background = new THREE.Color(0x111122);
-    scene.fog = new THREE.Fog(0x111122, 15, 60);
+    clearEnv(); scene.background = new THREE.Color(0x050510); scene.fog = new THREE.FogExp2(0x050510, 0.04);
+    environmentGroup.add(new THREE.AmbientLight(0x202040, 0.6));
 
-    const ambient = new THREE.AmbientLight(0x404060, 0.5);
-    environmentGroup.add(ambient);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 100), new THREE.MeshStandardMaterial({ color: 0x111 }));
+    floor.rotation.x = -Math.PI/2; environmentGroup.add(floor);
 
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 150), new THREE.MeshStandardMaterial({ color: 0x333333 }));
-    floor.rotation.x = -Math.PI/2;
-    environmentGroup.add(floor);
+    // Rue sombre et lampadaires
+    for(let i=0; i<4; i++) {
+        const bldg = new THREE.Mesh(new THREE.BoxGeometry(8, 20, 15), new THREE.MeshStandardMaterial({color:0x0a0a0a}));
+        bldg.position.set(-12, 10, 10 - i*20); environmentGroup.add(bldg);
+        const bldg2 = bldg.clone(); bldg2.position.set(12, 10, 10 - i*20); environmentGroup.add(bldg2);
 
-    // Bâtiments de la rue
-    const bldgMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
-    for(let i=0; i<6; i++) {
-        const leftBldg = new THREE.Mesh(new THREE.BoxGeometry(8, 15, 15), bldgMat);
-        leftBldg.position.set(-12, 7.5, -i*20 + 10);
-        environmentGroup.add(leftBldg);
-
-        const rightBldg = new THREE.Mesh(new THREE.BoxGeometry(8, 15, 15), bldgMat);
-        rightBldg.position.set(12, 7.5, -i*20 + 10);
-        environmentGroup.add(rightBldg);
-
-        // Lampadaire
-        const lamp = new THREE.PointLight(0xffddaa, 1, 20);
-        lamp.position.set(i%2==0 ? -6 : 6, 5, -i*20 + 10);
-        environmentGroup.add(lamp);
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 5), new THREE.MeshStandardMaterial({color:0x222}));
+        pole.position.set(i%2===0 ? -6 : 6, 2.5, 10 - i*20); environmentGroup.add(pole);
+        const lamp = new THREE.PointLight(0xffaa33, 2, 25); lamp.position.set(pole.position.x, 5, pole.position.z); environmentGroup.add(lamp);
     }
 
-    // PNJ (Gardiens / Humains)
-    spawnNPC("Humain", "Hé ! C'est quoi ce truc vert ?!", -3, -15, '#111', '#c0392b', '#111');
-    spawnNPC("Garde", "Alerte ! L'extraterrestre s'est échappé !", 4, -40, '#f1c40f', '#2980b9', '#34495e');
+    // LA SOUCOUPE VOLANTE
+    const ufoGroup = new THREE.Group();
+    const hull = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.5, 1.5, 24), new THREE.MeshStandardMaterial({color: 0x445566, metalness:0.8}));
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshStandardMaterial({color: 0x39ff14, emissive:0x113311, transparent:true, opacity:0.8}));
+    dome.position.y = 1; dome.scale.y = 0.6;
+    const ufoLight = new THREE.PointLight(0x39ff14, 3, 20); ufoLight.position.y = -1;
+    ufoGroup.add(hull, dome, ufoLight);
+    ufoGroup.position.set(0, 1.5, -60);
+    environmentGroup.add(ufoGroup);
 
-    // LA SOUPE (Vaisseau / Téléporteur)
-    const soupGroup = new THREE.Group();
-    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(2, 1.5, 1.5, 16), new THREE.MeshStandardMaterial({ color: 0x7f8c8d }));
-    bowl.position.y = 0.75;
-    soupGroup.add(bowl);
-    
-    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.2, 16), new THREE.MeshBasicMaterial({ color: 0x39ff14 }));
-    liquid.position.y = 1.5;
-    soupGroup.add(liquid);
-
-    const soupLight = new THREE.PointLight(0x39ff14, 2, 15);
-    soupLight.position.y = 3;
-    soupGroup.add(soupLight);
-
-    soupGroup.position.set(0, 0, -80);
-    environmentGroup.add(soupGroup);
-
-    interactables.push({ mesh: bowl, type: 'soup', hint: "Appuyez sur [E] pour plonger dans la Soupe Intergalactique" });
-
-    player.position.set(0, playerHeight, 20);
-    updateUI("La Rue", "#2980b9", "Courez jusqu'au bout de la rue vers la Soupe !");
+    interactables.push({ mesh: hull, type: 'exit', hint: "Appuyez sur [E] pour décoller vers Mars !" });
+    player.position.set(0, playerHeight, 25); setUI("3. La Rue", "#8e44ad", "Courez jusqu'à votre soucoupe volante.");
 }
 
-// --- NIVEAU 3 : MARS (VICTOIRE) ---
 function buildMarsEnd() {
-    clearEnvironment();
-    scene.background = new THREE.Color(0x9c5038);
-    scene.fog = new THREE.Fog(0x9c5038, 20, 80);
-
-    const ambient = new THREE.AmbientLight(0xffc2a0, 0.8);
-    environmentGroup.add(ambient);
-    const sun = new THREE.DirectionalLight(0xff9363, 2);
-    sun.position.set(-20, 30, -20);
-    environmentGroup.add(sun);
-
+    clearEnv(); scene.background = new THREE.Color(0x9c5038); scene.fog = new THREE.Fog(0x9c5038, 10, 50);
+    environmentGroup.add(new THREE.AmbientLight(0xffc2a0, 1));
+    const sun = new THREE.DirectionalLight(0xff9363, 2); sun.position.set(-20,30,-20); environmentGroup.add(sun);
+    
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x9a4930 }));
-    floor.rotation.x = -Math.PI/2;
-    environmentGroup.add(floor);
+    floor.rotation.x = -Math.PI/2; environmentGroup.add(floor);
+    
+    const ufo = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.5, 1.5, 24), new THREE.MeshStandardMaterial({color: 0x445566}));
+    ufo.position.set(5, 0.75, -5); environmentGroup.add(ufo);
 
-    // Maison Alien
-    const home = new THREE.Mesh(new THREE.DodecahedronGeometry(5, 0), new THREE.MeshStandardMaterial({ color: 0x5c2a21 }));
-    home.position.set(0, 2, -15);
-    environmentGroup.add(home);
-
-    player.position.set(0, playerHeight, 5);
-    updateUI("Mars - Victoire", "#e67e22", "Évasion réussie. Vous êtes de retour chez vous !");
+    player.position.set(0, playerHeight, 5); setUI("4. Mars - Victoire", "#e67e22", "Évasion réussie. Vous êtes sauf !");
 }
 
-function spawnNPC(name, text, startX, startZ, hairColor, clothesColor, pantsColor) {
-    const texture = createPixelTexture(characterArt, getNPCPalette(hairColor, clothesColor, pantsColor));
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:texture }));
-    sprite.scale.set(2.2, 2.2, 1);
-    sprite.position.set(startX, playerHeight, startZ);
-    environmentGroup.add(sprite);
-
-    npcs.push({ mesh:sprite, name:name, text:text, spawn:{x:startX,z:startZ}, target:{x:startX,z:startZ}, timer:0 });
+function spawnNPC(name, text, x, z, hair) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(charArt, getPal(hair)) }));
+    s.scale.set(2.2, 2.2, 1); s.position.set(x, playerHeight, z); environmentGroup.add(s);
+    npcs.push({ mesh:s, name:name, text:text });
 }
 
-function loadStage(stageIndex) {
-    if(stageIndex === 0) buildCave();
-    if(stageIndex === 1) buildStreet();
-    if(stageIndex === 2) buildMarsEnd();
-}
+function loadStage(idx) { if(idx===0) buildCave(); else if(idx===1) buildLab(); else if(idx===2) buildStreet(); else buildMarsEnd(); }
 
 function nextStage() {
-    const screen = document.getElementById('fade-screen');
-    screen.style.opacity = '1';
-    setTimeout(() => {
-        currentStage++;
-        loadStage(currentStage);
-        screen.style.opacity = '0';
-    }, 1000);
+    const s = document.getElementById('fade-screen'); s.style.opacity = '1';
+    setTimeout(() => { currentStage++; loadStage(currentStage); s.style.opacity = '0'; }, 1000);
 }
 
-function openDialogue(npcData) {
-    isDialogueOpen = true;
-    document.getElementById('dialogue-name').innerText = npcData.name;
-    document.getElementById('dialogue-text').innerText = npcData.text;
-    document.getElementById('dialogue-box').style.display = 'block';
-    document.getElementById('interaction-hint').style.display = 'none';
+function openDialogue(data) {
+    isDialogueOpen=true; document.getElementById('dialogue-name').innerText=data.name;
+    document.getElementById('dialogue-text').innerText=data.text; document.getElementById('dialogue-box').style.display='block';
+    document.getElementById('interaction-hint').style.display='none';
 }
-
-function closeDialogue() {
-    isDialogueOpen = false;
-    document.getElementById('dialogue-box').style.display = 'none';
-}
+function closeDialogue() { isDialogueOpen=false; document.getElementById('dialogue-box').style.display='none'; }
 
 function animate() {
     requestAnimationFrame(animate);
-    const delta = Math.min(clock.getDelta(), 0.04);
-    elapsed += delta;
+    const delta = Math.min(clock.getDelta(), 0.04); elapsed += delta;
 
     if(!isDialogueOpen) {
-        const direction = new THREE.Vector3();
-        if(keys.z) direction.z -= 1;
-        if(keys.s) direction.z += 1;
-        if(keys.q) direction.x -= 1;
-        if(keys.d) direction.x += 1;
+        let dx=0, dz=0;
+        if(keys.z) dz-=1; if(keys.s) dz+=1; if(keys.q) dx-=1; if(keys.d) dx+=1;
+        const moving = (dx!==0 || dz!==0);
+        if(moving) { let len=Math.sqrt(dx*dx+dz*dz); player.position.x += (dx/len)*playerSpeed*delta; player.position.z += (dz/len)*playerSpeed*delta; }
 
-        isMoving = direction.length() > 0;
-        if(isMoving) {
-            direction.normalize();
-            player.position.x += direction.x * playerSpeed * delta;
-            player.position.z += direction.z * playerSpeed * delta;
-        }
-
-        // Limites basiques
-        player.position.x = THREE.MathUtils.clamp(player.position.x, -8, 8);
-
-        // Saut
-        if(keys.space && !isJumping) {
-            velocityY = jumpStrength;
-            isJumping = true;
-        }
-
+        if(keys.space && !isJumping) { velocityY = jumpStrength; isJumping = true; }
         if(isJumping) {
-            player.position.y += velocityY * delta;
-            velocityY -= gravity * delta;
-            if(player.position.y <= playerHeight) {
-                player.position.y = playerHeight;
-                velocityY = 0;
-                isJumping = false;
-            }
-        } else {
-            player.position.y = playerHeight + (isMoving ? Math.abs(Math.sin(elapsed*10))*.1 : 0);
-        }
-
+            player.position.y += velocityY * delta; velocityY -= gravity * delta;
+            if(player.position.y <= playerHeight) { player.position.y = playerHeight; velocityY = 0; isJumping = false; }
+        } else player.position.y = playerHeight + (moving ? Math.abs(Math.sin(elapsed*12))*.15 : 0);
+        
         playerLight.position.copy(player.position);
 
-        // PNJ
-        npcs.forEach(npc => {
-            npc.timer -= delta;
-            if(npc.timer <= 0) {
-                npc.target.x = npc.spawn.x + (Math.random()-.5)*4;
-                npc.target.z = npc.spawn.z + (Math.random()-.5)*4;
-                npc.timer = 2 + Math.random()*3;
-            }
-            const dx = npc.target.x - npc.mesh.position.x;
-            const dz = npc.target.z - npc.mesh.position.z;
-            const dist = Math.sqrt(dx*dx + dz*dz);
-            if(dist > 0.1) {
-                npc.mesh.position.x += (dx/dist)*1.5*delta;
-                npc.mesh.position.z += (dz/dist)*1.5*delta;
-                npc.mesh.position.y = playerHeight + Math.abs(Math.sin(elapsed*5))*.1;
-            }
-        });
-
-        // Interactions
-        let closestDist = 3;
-        activeInteractable = null;
-
-        interactables.forEach(item => {
-            const dist = player.position.distanceTo(item.mesh.position);
-            if(dist < closestDist) {
-                closestDist = dist;
-                activeInteractable = { type: item.type, data: item, hint: item.hint };
-            }
-        });
-
-        npcs.forEach(npc => {
-            const dist = player.position.distanceTo(npc.mesh.position);
-            if(dist < closestDist) {
-                closestDist = dist;
-                activeInteractable = { type: 'npc', data: npc, hint: `Appuyez sur [E] pour écouter ${npc.name}` };
-            }
-        });
-
-        const hintBox = document.getElementById('interaction-hint');
-        if(activeInteractable) {
-            hintBox.innerText = activeInteractable.hint;
-            hintBox.style.display = 'block';
-        } else {
-            hintBox.style.display = 'none';
-        }
+        let closest = 3; activeInteractable = null;
+        interactables.forEach(i => { if(player.position.distanceTo(i.mesh.position) < closest) { closest=player.position.distanceTo(i.mesh.position); activeInteractable={type:i.type, hint:i.hint}; } });
+        npcs.forEach(n => { if(player.position.distanceTo(n.mesh.position) < closest) { closest=player.position.distanceTo(n.mesh.position); activeInteractable={type:'npc', data:n, hint:`Appuyez sur [E] pour écouter ${n.name}`}; } });
+        
+        const hint = document.getElementById('interaction-hint');
+        if(activeInteractable) { hint.innerText=activeInteractable.hint; hint.style.display='block'; } else hint.style.display='none';
     }
 
-    // Caméra dynamique
-    const targetCamPos = new THREE.Vector3(player.position.x, player.position.y + 5, player.position.z + 10);
-    camera.position.lerp(targetCamPos, 0.1);
+    camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y+5, player.position.z+9), 0.1);
     camera.lookAt(player.position.x, player.position.y, player.position.z);
-
     renderer.render(scene, camera);
 }
-
 init();
 </script>
 </body>
