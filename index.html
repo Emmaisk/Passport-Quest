@@ -44,7 +44,7 @@
     <div id="ui-layer">
         <h2 id="planet-name" style="color: #e67e22;">Mars - Désert</h2>
         <p id="planet-desc">Trouvez votre vaisseau pour rentrer.</p>
-        <p style="font-size: 0.8rem; margin-top: 15px; color: #aaa; font-family: 'Segoe UI';">Déplacement: Z Q S D | Interagir: E</p>
+        <p style="font-size: 0.8rem; margin-top: 15px; color: #aaa; font-family: 'Segoe UI';">Déplacement: Z Q S D | Saut: Espace | Interagir: E</p>
     </div>
 
     <div id="interaction-hint">Appuyez sur [E]</div>
@@ -60,16 +60,22 @@
         let scene, camera, renderer, player, spaceship, playerLight;
         let environmentGroup = new THREE.Group(); 
         
-        const keys = { z: false, q: false, s: false, d: false, e: false };
+        // Ajout de 'space' pour le saut
+        const keys = { z: false, q: false, s: false, d: false, e: false, space: false };
         let isMoving = false;
         let time = 0;
-        let currentPlanet = 'mars'; // Commence sur Mars
+        let currentPlanet = 'mars'; 
         
+        // Variables pour la physique du saut
+        let velocityY = 0;
+        const gravity = -0.015;
+        const jumpStrength = 0.35;
+        let isJumping = false;
+
         let npcs = [];
-        let activeInteractable = null; // { type: 'ship' | 'npc', data: ... }
+        let activeInteractable = null; 
         let isDialogueOpen = false;
 
-        // --- 1. GÉNÉRATEURS DE TEXTURES (SANS FICHIERS EXTERNES) ---
         function createPixelTexture(artArray, palette) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -86,7 +92,6 @@
             return tex;
         }
 
-        // Texture pour les pavés du village
         function createCobblestoneTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 256;
@@ -104,7 +109,6 @@
             return tex;
         }
 
-        // Modèle de personnage de base
         const characterArt = [
             "      BBBB      ",
             "    BHHHHHHB    ",
@@ -124,8 +128,7 @@
             "    BBBBBBBB    "
         ];
 
-        // Palettes personnalisées
-        const playerPalette = { 'B':'#000', 'H':'#ECF0F1', '2':'#FFE0BD', 'E':'#00E5FF', 'W':'#FFF', 'V':'#0088AA', 'C':'#ECF0F1', '3':'#922B21', '4':'#E74C3C', '5':'#7F8C8D', '6':'#2C3E50' }; // Astronaute
+        const playerPalette = { 'B':'#000', 'H':'#ECF0F1', '2':'#FFE0BD', 'E':'#00E5FF', 'W':'#FFF', 'V':'#0088AA', 'C':'#ECF0F1', '3':'#922B21', '4':'#E74C3C', '5':'#7F8C8D', '6':'#2C3E50' }; 
         
         function getNPCPalette(hair, clothes, pants) {
             return { 'B':'#111', 'H':hair, '2':'#FFDAB9', 'E':'#000', 'W':'#000', 'V':'#000', 'C':clothes, '3':clothes, '4':clothes, '5':pants, '6':'#333' };
@@ -136,27 +139,33 @@
             scene.add(environmentGroup);
 
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            // CORRECTION ECRAN NOIR : Placer la caméra en hauteur dès le départ
+            camera.position.set(0, 10, 20); 
+            
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
-            // Joueur
             const playerTex = createPixelTexture(characterArt, playerPalette);
             player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTex }));
             player.scale.set(2.5, 2.5, 1);
+            // Position de base du joueur
+            player.position.set(0, 1.15, 0); 
             scene.add(player);
 
             playerLight = new THREE.PointLight(0xffddaa, 0, 8); 
             scene.add(playerLight);
 
             window.addEventListener('keydown', (e) => { 
-                const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; 
+                const k = e.key.toLowerCase(); 
+                if (keys.hasOwnProperty(k)) keys[k] = true; 
+                if (e.key === ' ') keys.space = true; // Détection spécifique de l'espace
                 
                 if (k === 'e' && !e.repeat) {
                     if (isDialogueOpen) {
-                        closeDialogue(); // Ferme si déjà ouvert
+                        closeDialogue(); 
                     } else if (activeInteractable) {
                         if (activeInteractable.type === 'ship') travel();
                         if (activeInteractable.type === 'npc') openDialogue(activeInteractable.data);
@@ -164,18 +173,18 @@
                 }
             });
             window.addEventListener('keyup', (e) => { 
-                const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; 
+                const k = e.key.toLowerCase(); 
+                if (keys.hasOwnProperty(k)) keys[k] = false; 
+                if (e.key === ' ') keys.space = false;
             });
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
-            buildMars(); // On commence sur Mars pour voir la différence !
+            buildMars(); 
             animate();
         }
-
-        // --- 2. CRÉATION DES DÉCORS ET PNJ ---
 
         function createHouse(x, z, width, depth, height) {
             const group = new THREE.Group();
@@ -193,7 +202,6 @@
             roof.castShadow = true; 
             group.add(roof);
 
-            // Fenêtre lumineuse
             const winLight = new THREE.PointLight(0xffaa33, 1, 15);
             winLight.position.set(0, height*0.4, depth/2 + 0.5);
             group.add(winLight);
@@ -210,7 +218,7 @@
             const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffcc77 }));
             bulb.position.y = 4.2; group.add(bulb);
             
-            const light = new THREE.PointLight(0xffaa33, 1.5, 20); // Lumière chaude et forte
+            const light = new THREE.PointLight(0xffaa33, 1.5, 20); 
             light.position.y = 4.2; light.castShadow = true; group.add(light);
             
             group.position.set(x, 0, z);
@@ -256,43 +264,36 @@
 
         function buildEarth() {
             clearEnvironment();
-            scene.background = new THREE.Color(0x1a1a2e); // Ciel crépusculaire sombre
+            scene.background = new THREE.Color(0x1a1a2e); 
             scene.fog = new THREE.FogExp2(0x1a1a2e, 0.02);
-            playerLight.intensity = 0.5; // Petite lueur sur le joueur
+            playerLight.intensity = 0.5; 
 
-            // Lumières d'ambiance froides pour contraster avec les lampadaires chauds
-            const ambient = new THREE.AmbientLight(0x404060, 0.6); 
+            const ambient = new THREE.AmbientLight(0x404060, 0.8); // Légèrement augmenté pour éviter le noir total
             environmentGroup.add(ambient);
 
-            // Sol pavé
             const ground = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.MeshStandardMaterial({ map: createCobblestoneTexture(), roughness: 0.8 }));
             ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
             environmentGroup.add(ground);
 
-            // Le Village (Murs / Maisons)
             environmentGroup.add(createHouse(-15, -15, 8, 8, 6));
             environmentGroup.add(createHouse(15, -12, 10, 8, 7));
             environmentGroup.add(createHouse(-10, 18, 9, 9, 6));
             environmentGroup.add(createHouse(18, 15, 7, 7, 5));
 
-            // Décorations
             environmentGroup.add(createStreetLamp(-5, -5));
             environmentGroup.add(createStreetLamp(8, 6));
             environmentGroup.add(createTree(-12, -2));
             environmentGroup.add(createTree(12, -2));
             environmentGroup.add(createTree(-5, 12));
 
-            // PNJ
-            spawnNPC("Emma", "La brise du soir est tellement agréable... Tu ne trouves pas ?", -4, 0, '#8e44ad', '#9b59b6', '#ecf0f1'); // Violette
-            spawnNPC("Serge", "J'ai passé la journée à réparer mon toit. Ces maisons anciennes demandent de l'entretien.", 5, -3, '#d35400', '#2980b9', '#34495e'); // Bleu/Orange
-            spawnNPC("Kelly", "Oh, un astronaute ! Tu viens des étoiles ? Moi je n'ai jamais quitté ce village.", -3, 8, '#f1c40f', '#27ae60', '#bdc3c7'); // Jaune/Verte
-            spawnNPC("Jessica", "Fais attention près de la lisière du village, il fait vite très sombre la nuit.", 7, 7, '#c0392b', '#111', '#111'); // Rouge/Noire
+            spawnNPC("Emma", "La brise du soir est tellement agréable... Tu ne trouves pas ?", -4, 0, '#8e44ad', '#9b59b6', '#ecf0f1'); 
+            spawnNPC("Serge", "J'ai passé la journée à réparer mon toit. Ces maisons anciennes demandent de l'entretien.", 5, -3, '#d35400', '#2980b9', '#34495e'); 
+            spawnNPC("Kelly", "Oh, un astronaute ! Tu viens des étoiles ? Moi je n'ai jamais quitté ce village.", -3, 8, '#f1c40f', '#27ae60', '#bdc3c7'); 
+            spawnNPC("Jessica", "Fais attention près de la lisière du village, il fait vite très sombre la nuit.", 7, 7, '#c0392b', '#111', '#111'); 
 
-            // Vaisseau posé à l'extérieur du village
             spaceship = createSpaceship(0, 25);
             environmentGroup.add(spaceship);
 
-            // UI
             updateUI("Terre - Village d'Oakhaven", "#a67c00", "Parlez aux habitants ou retournez au vaisseau.");
         }
 
@@ -302,13 +303,12 @@
             scene.fog = new THREE.FogExp2(0x2a0d05, 0.02);
             playerLight.intensity = 0; 
 
-            const ambient = new THREE.AmbientLight(0xffddbb, 0.4);
+            const ambient = new THREE.AmbientLight(0xffddbb, 0.6); // Augmenté pour sécuriser le rendu
             const sun = new THREE.DirectionalLight(0xff7700, 1.2);
             sun.position.set(-30, 20, -30); sun.castShadow = true;
             sun.shadow.camera.left = -50; sun.shadow.camera.right = 50; sun.shadow.camera.top = 50; sun.shadow.camera.bottom = -50;
             environmentGroup.add(ambient, sun);
 
-            // Sol vallonné
             const groundGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
             const pos = groundGeo.attributes.position;
             for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i)*0.05) * Math.cos(pos.getY(i)*0.05) * 3);
@@ -329,4 +329,146 @@
             spaceship = null;
         }
 
-        // --- 3
+        function updateUI(name, color, desc) {
+            document.getElementById('planet-name').innerText = name;
+            document.getElementById('planet-name').style.color = color;
+            document.getElementById('ui-layer').style.borderColor = color;
+            document.getElementById('planet-desc').innerText = desc;
+        }
+
+        function travel() {
+            const screen = document.getElementById('fade-screen');
+            screen.style.opacity = '1';
+            setTimeout(() => {
+                if(currentPlanet === 'mars') { currentPlanet = 'terre'; buildEarth(); } 
+                else { currentPlanet = 'mars'; buildMars(); }
+                
+                // Réinitialise la position du joueur et coupe le saut
+                player.position.set(0, 10, 0); 
+                velocityY = 0;
+                isJumping = false;
+                
+                screen.style.opacity = '0';
+            }, 1000);
+        }
+
+        function openDialogue(npcData) {
+            isDialogueOpen = true;
+            document.getElementById('dialogue-name').innerText = npcData.name;
+            document.getElementById('dialogue-text').innerText = npcData.text;
+            document.getElementById('dialogue-box').style.display = 'block';
+            document.getElementById('interaction-hint').style.display = 'none';
+        }
+
+        function closeDialogue() {
+            isDialogueOpen = false;
+            document.getElementById('dialogue-box').style.display = 'none';
+        }
+
+        function getGroundHeight(x, z) {
+            if(currentPlanet === 'terre') return 0;
+            return Math.sin(x*0.05) * Math.cos(z*0.05) * 3;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.05;
+            
+            if (!isDialogueOpen) {
+                // Déplacement au sol
+                const speed = 0.25;
+                isMoving = false;
+                if (keys.z) { player.position.z -= speed; isMoving = true; }
+                if (keys.s) { player.position.z += speed; isMoving = true; }
+                if (keys.q) { player.position.x -= speed; isMoving = true; }
+                if (keys.d) { player.position.x += speed; isMoving = true; }
+
+                // LOGIQUE DU SAUT
+                const groundY = getGroundHeight(player.position.x, player.position.z) + 1.15;
+                
+                if (keys.space && !isJumping) {
+                    velocityY = jumpStrength;
+                    isJumping = true;
+                }
+
+                // Application de la gravité
+                velocityY += gravity;
+                player.position.y += velocityY;
+
+                // Collision avec le sol
+                if (player.position.y <= groundY) {
+                    // Animation de marche (sautillement) uniquement si on touche le sol
+                    const walkBobbing = isMoving ? Math.abs(Math.sin(time * 6)) * 0.2 : 0;
+                    player.position.y = groundY + walkBobbing;
+                    velocityY = 0;
+                    isJumping = false;
+                }
+
+                playerLight.position.copy(player.position);
+
+                // IA des PNJ
+                npcs.forEach(npc => {
+                    npc.timer -= 1;
+                    if (npc.timer <= 0) {
+                        npc.target.x = npc.spawn.x + (Math.random() - 0.5) * 6;
+                        npc.target.z = npc.spawn.z + (Math.random() - 0.5) * 6;
+                        npc.timer = 100 + Math.random() * 200; 
+                    }
+
+                    const dx = npc.target.x - npc.mesh.position.x;
+                    const dz = npc.target.z - npc.mesh.position.z;
+                    const distToTarget = Math.sqrt(dx*dx + dz*dz);
+
+                    if (distToTarget > 0.1) {
+                        npc.mesh.position.x += (dx / distToTarget) * 0.03; 
+                        npc.mesh.position.z += (dz / distToTarget) * 0.03;
+                        npc.mesh.position.y = 1.15 + Math.abs(Math.sin(time * 4)) * 0.1; 
+                    } else {
+                        npc.mesh.position.y = 1.15; 
+                    }
+                });
+
+                // Interactions
+                let closestDist = 4; 
+                activeInteractable = null;
+                let hintText = "";
+
+                if (spaceship && player.position.distanceTo(spaceship.position) < closestDist) {
+                    activeInteractable = { type: 'ship' };
+                    hintText = currentPlanet === 'mars' ? "Appuyez sur [E] pour voyager vers la Terre" : "Appuyez sur [E] pour retourner sur Mars";
+                    closestDist = player.position.distanceTo(spaceship.position);
+                }
+
+                npcs.forEach(npc => {
+                    const dist = player.position.distanceTo(npc.mesh.position);
+                    if (dist < closestDist) {
+                        activeInteractable = { type: 'npc', data: npc };
+                        hintText = `Appuyez sur [E] pour parler à ${npc.name}`;
+                        closestDist = dist;
+                    }
+                });
+
+                const hintBox = document.getElementById('interaction-hint');
+                if (activeInteractable) {
+                    hintBox.innerText = hintText;
+                    hintBox.style.display = 'block';
+                } else {
+                    hintBox.style.display = 'none';
+                    closeDialogue(); 
+                }
+            }
+
+            if (spaceship) spaceship.position.y = getGroundHeight(spaceship.position.x, spaceship.position.z);
+
+            // Caméra : fluide et adaptée au saut
+            const targetCamPos = new THREE.Vector3(player.position.x, player.position.y + 7, player.position.z + 14);
+            camera.position.lerp(targetCamPos, 0.08);
+            camera.lookAt(player.position.x, player.position.y, player.position.z);
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
