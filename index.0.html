@@ -1,25 +1,109 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
-    <title>Passport Quest</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exploration Spatiale - Mars</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Empêche le défilement de la page */
+            background-color: #000;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+    <!-- Importation de Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-
 <body>
 
-    <h1>Passport Quest</h1>
+    <div id="ui-layer">
+        <h2>Planète : Mars</h2>
+        <p>Objectif : Explorer les environs</p>
+        <p><i>Contrôles : Z Q S D ou Flèches directionnelles</i></p>
+    </div>
 
-    <p>Découvre les pays du monde !</p>
+    <script>
+        // 1. INITIALISATION DE LA SCÈNE, CAMÉRA ET RENDU
+        const scene = new THREE.Scene();
+        // Couleur de fond (ciel martien sombre/orangé)
+        scene.background = new THREE.Color(0x3a1008); 
+        scene.fog = new THREE.Fog(0x3a1008, 10, 50); // Ajoute du brouillard pour la profondeur
 
-    <input type="text" placeholder="Rechercher un pays">
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-    <button>Rechercher</button>
+        // 2. CRÉATION DE L'ENVIRONNEMENT (Le sol de Mars)
+        const groundGeometry = new THREE.PlaneGeometry(200, 200);
+        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x8c3a21 }); // Rouge/Orange martien
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2; // Met le plan à l'horizontale
+        scene.add(ground);
 
-    <h2>Carte du monde</h2>
+        // 3. CRÉATION DU PERSONNAGE (Sprite 2D - Style HD-2D)
+        // Pour l'instant, on utilise un carré blanc/bleu. Plus tard, tu pourras charger une vraie image PNG transparente.
+        const playerCanvas = document.createElement('canvas');
+        playerCanvas.width = 64; playerCanvas.height = 64;
+        const ctx = playerCanvas.getContext('2d');
+        ctx.fillStyle = '#00aaff'; // Couleur de la combinaison de base
+        ctx.fillRect(16, 16, 32, 48); // Forme grossière d'un personnage
+        
+        const playerTexture = new THREE.CanvasTexture(playerCanvas);
+        const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
+        const player = new THREE.Sprite(playerMaterial);
+        player.scale.set(2, 2, 1); // Taille du personnage
+        player.position.y = 1; // Le remonte pour qu'il soit sur le sol
+        scene.add(player);
 
-    <p>La carte sera ajoutée ici.</p>
+        // 4. POSITION INITIALE DE LA CAMÉRA
+        const cameraOffset = new THREE.Vector3(0, 5, 10); // Caméra en hauteur et en arrière
 
+        // 5. GESTION DES CONTRÔLES (Clavier)
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        const speed = 0.15;
+
+        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        // 6. BOUCLE D'ANIMATION ET LOGIQUE DU JEU
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Mouvements du joueur
+            if (keys.w || keys.ArrowUp) player.position.z -= speed;
+            if (keys.s || keys.ArrowDown) player.position.z += speed;
+            if (keys.a || keys.ArrowLeft) player.position.x -= speed;
+            if (keys.d || keys.ArrowRight) player.position.x += speed;
+
+            // La caméra suit le joueur
+            camera.position.x = player.position.x + cameraOffset.x;
+            camera.position.y = player.position.y + cameraOffset.y;
+            camera.position.z = player.position.z + cameraOffset.z;
+            camera.lookAt(player.position);
+
+            renderer.render(scene, camera);
+        }
+
+        // Gérer le redimensionnement de la fenêtre
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
+        animate();
+    </script>
 </body>
-
 </html>
