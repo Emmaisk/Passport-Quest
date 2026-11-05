@@ -1,159 +1,228 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
-    <title>Passport Quest</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exploration Spatiale - Mission Mars</title>
     <style>
-
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            text-align: center;
-            background-color: #fff5fb;
-            color: #4a4055;
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* --- MENU D'ACCUEIL --- */
+        #hub-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; z-index: 100; transition: opacity 1s;
         }
-
-        header {
-            background-color: #d8c6ff;
-            padding: 35px;
+        #hub-screen h1 { font-size: 4rem; margin-bottom: 10px; text-shadow: 0 0 20px #e06666; }
+        #hub-screen p { font-size: 1.2rem; margin-bottom: 30px; color: #aaa; }
+        .btn-start {
+            padding: 15px 40px; font-size: 1.5rem; font-weight: bold; color: white;
+            background: linear-gradient(45deg, #d32f2f, #f44336); border: none; border-radius: 30px;
+            cursor: pointer; box-shadow: 0 8px 15px rgba(244, 67, 54, 0.4); transition: transform 0.2s;
         }
+        .btn-start:hover { transform: scale(1.05); }
 
-        h1 {
-            color: white;
-            font-size: 42px;
-            margin: 0;
+        /* --- INTERFACE EN JEU --- */
+        #ui-layer {
+            position: absolute; top: 20px; left: 20px; color: white; display: none;
+            background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 8px;
+            border-left: 4px solid #f44336; z-index: 10;
         }
-
-        header p {
-            color: white;
-            font-size: 18px;
+        
+        /* --- BULLE DE DIALOGUE --- */
+        #dialogue-box {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9); color: black; padding: 20px;
+            border-radius: 10px; font-size: 1.2rem; font-weight: bold; display: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 20; text-align: center;
         }
-
-        .contenu {
-            width: 75%;
-            margin: 40px auto;
-        }
-
-        .recherche {
-            margin: 30px;
-        }
-
-        input {
-            padding: 12px;
-            width: 260px;
-            border: 2px solid #e2b8d5;
-            border-radius: 20px;
-        }
-
-        button {
-            padding: 12px 18px;
-            background-color: #e6a8cf;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #d78cbb;
-        }
-
-        .carte {
-            background-color: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0px 5px 15px #eadcea;
-            margin-top: 30px;
-        }
-
-        .carte h2 {
-            color: #987bc5;
-        }
-
-        .options {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .option {
-            background-color: #eef6ff;
-            padding: 20px;
-            width: 180px;
-            border-radius: 15px;
-        }
-
-        .option h3 {
-            color: #987bc5;
-        }
-
-        footer {
-            margin-top: 50px;
-            padding: 20px;
-            background-color: #d8c6ff;
-            color: white;
-        }
-
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-
 <body>
 
-    <header>
-        <h1>✈️ Passport Quest</h1>
-        <p>Explore le monde, un pays à la fois ♡</p>
-    </header>
-
-    <div class="contenu">
-
-        <div class="recherche">
-
-            <input type="text" placeholder="Quel pays veux-tu découvrir ?">
-
-            <button>Rechercher</button>
-
-        </div>
-
-        <div class="carte">
-
-            <h2>🌍 Explore le monde</h2>
-
-            <p>
-                Clique bientôt sur un pays pour découvrir ses informations !
-            </p>
-
-            <p>🗺️ Carte interactive à venir...</p>
-
-        </div>
-
-        <div class="options">
-
-            <div class="option">
-                <h3>🎲 Surprise</h3>
-                <p>Découvre un pays au hasard.</p>
-            </div>
-
-            <div class="option">
-                <h3>💌 Infos</h3>
-                <p>Découvre sa langue, sa capitale et sa monnaie.</p>
-            </div>
-
-            <div class="option">
-                <h3>✨ Quiz</h3>
-                <p>Teste bientôt tes connaissances.</p>
-            </div>
-
-        </div>
-
+    <!-- Écran d'accueil -->
+    <div id="hub-screen">
+        <h1>STATION ORBITALE</h1>
+        <p>Sélectionnez votre prochaine destination</p>
+        <button class="btn-start" onclick="startGame()">Atterrir sur Mars</button>
     </div>
 
-    <footer>
-        Passport Quest 🌸
-    </footer>
+    <!-- Interface en jeu -->
+    <div id="ui-layer">
+        <h2 style="margin:0 0 10px 0;">Mars</h2>
+        <p style="margin:0; font-size:14px;">Trouvez la forme de vie locale.</p>
+        <p style="margin:10px 0 0 0; font-size:12px; color:#ccc;">Déplacement : Z Q S D</p>
+    </div>
 
+    <!-- Dialogue PNJ -->
+    <div id="dialogue-box">Salutations, voyageur ! Que fais-tu sur mon territoire de sable ?</div>
+
+    <script>
+        let scene, camera, renderer, player, alien;
+        let gameActive = false;
+        
+        // --- CONTRÔLES AZERTY ---
+        const keys = { z: false, q: false, s: false, d: false };
+        const speed = 0.15;
+        
+        window.addEventListener('keydown', (e) => { 
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = true; 
+        });
+        window.addEventListener('keyup', (e) => { 
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = false; 
+        });
+
+        function initGame() {
+            // 1. SCÈNE & CAMÉRA
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x3d1c13); 
+            scene.fog = new THREE.FogExp2(0x3d1c13, 0.03); // Brouillard dense
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // Activer les ombres
+            document.body.appendChild(renderer.domElement);
+
+            // 2. LUMIÈRES (Soleil rasant pour l'effet HD-2D)
+            const ambientLight = new THREE.AmbientLight(0xffccaa, 0.4);
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xff6600, 1.5);
+            sunLight.position.set(-20, 15, -20);
+            sunLight.castShadow = true;
+            sunLight.shadow.camera.left = -30; sunLight.shadow.camera.right = 30;
+            sunLight.shadow.camera.top = 30; sunLight.shadow.camera.bottom = -30;
+            scene.add(sunLight);
+
+            // 3. DÉCORS (Dunes générées mathématiquement)
+            const groundGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
+            const pos = groundGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                // Création de collines et vallées avec sin/cos
+                let z = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 2; 
+                pos.setZ(i, z);
+            }
+            groundGeo.computeVertexNormals();
+            
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x933b22, roughness: 0.9, flatShading: true });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Particules (Poussière martienne)
+            const particleGeo = new THREE.BufferGeometry();
+            const particleCount = 500;
+            const particlePos = new Float32Array(particleCount * 3);
+            for(let i=0; i<particleCount*3; i++) {
+                particlePos[i] = (Math.random() - 0.5) * 100;
+            }
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+            const particleMat = new THREE.PointsMaterial({ color: 0xffaa55, size: 0.2, transparent: true, opacity: 0.6 });
+            const particles = new THREE.Points(particleGeo, particleMat);
+            scene.add(particles);
+
+            // 4. LE JOUEUR (Astronaute 2D)
+            const playerCanvas = document.createElement('canvas');
+            playerCanvas.width = 64; playerCanvas.height = 64;
+            const pCtx = playerCanvas.getContext('2d');
+            pCtx.fillStyle = 'white'; pCtx.fillRect(16, 20, 32, 40); // Corps
+            pCtx.fillStyle = '#ddd'; pCtx.fillRect(12, 4, 40, 32); // Casque
+            pCtx.fillStyle = '#0cf'; pCtx.fillRect(20, 12, 24, 16); // Visière
+            
+            const playerTex = new THREE.CanvasTexture(playerCanvas);
+            playerTex.magFilter = THREE.NearestFilter;
+            player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTex }));
+            player.scale.set(2, 2, 1);
+            player.position.set(0, 1.5, 0);
+            scene.add(player);
+
+            // 5. L'EXTRATERRESTRE (PNJ)
+            const alienCanvas = document.createElement('canvas');
+            alienCanvas.width = 64; alienCanvas.height = 64;
+            const aCtx = alienCanvas.getContext('2d');
+            aCtx.fillStyle = '#4CAF50'; aCtx.fillRect(16, 24, 32, 36); // Corps vert
+            aCtx.fillRect(20, 8, 24, 16); // Tête
+            aCtx.fillStyle = 'black'; aCtx.fillRect(24, 12, 4, 4); aCtx.fillRect(36, 12, 4, 4); // Yeux
+            aCtx.fillStyle = '#4CAF50'; aCtx.fillRect(12, 0, 4, 10); aCtx.fillRect(48, 0, 4, 10); // Antennes
+            
+            const alienTex = new THREE.CanvasTexture(alienCanvas);
+            alienTex.magFilter = THREE.NearestFilter;
+            alien = new THREE.Sprite(new THREE.SpriteMaterial({ map: alienTex }));
+            alien.scale.set(1.8, 1.8, 1);
+            alien.position.set(10, 1.5, -15); // Placé plus loin
+            scene.add(alien);
+
+            // Lancement de la boucle
+            gameActive = true;
+            animate();
+        }
+
+        function startGame() {
+            document.getElementById('hub-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('hub-screen').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'block';
+                initGame();
+            }, 1000);
+        }
+
+        // 6. BOUCLE D'ANIMATION ET LOGIQUE
+        const cameraOffset = new THREE.Vector3(0, 5, 10);
+
+        function animate() {
+            if (!gameActive) return;
+            requestAnimationFrame(animate);
+
+            // Déplacement (AZERTY)
+            if (keys.z) player.position.z -= speed;
+            if (keys.s) player.position.z += speed;
+            if (keys.q) player.position.x -= speed;
+            if (keys.d) player.position.x += speed;
+
+            // Ajustement de la hauteur du joueur selon les dunes
+            const playerGroundY = Math.sin(player.position.x * 0.1) * Math.cos(player.position.z * 0.1) * 2;
+            player.position.y = playerGroundY + 1.5;
+
+            // Ajustement hauteur PNJ
+            const alienGroundY = Math.sin(alien.position.x * 0.1) * Math.cos(alien.position.z * 0.1) * 2;
+            alien.position.y = alienGroundY + 1.5;
+
+            // Interaction PNJ
+            const distance = player.position.distanceTo(alien.position);
+            const dialogue = document.getElementById('dialogue-box');
+            if (distance < 5) {
+                dialogue.style.display = 'block';
+            } else {
+                dialogue.style.display = 'none';
+            }
+
+            // Suivi de caméra fluide
+            camera.position.lerp(new THREE.Vector3(
+                player.position.x + cameraOffset.x,
+                player.position.y + cameraOffset.y,
+                player.position.z + cameraOffset.z
+            ), 0.1);
+            camera.lookAt(player.position);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            if(camera && renderer) {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            }
+        });
+    </script>
 </body>
-
 </html>
