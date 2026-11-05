@@ -1,75 +1,135 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
-    <title>Passport Quest</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exploration Spatiale - HD-2D Complet</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #eaf4ff;
-            text-align: center;
-            margin: 0;
-        }
-
-        h1 {
-            background-color: #3b82f6;
-            color: white;
-            margin: 0;
-            padding: 30px;
-        }
-
-        p {
-            font-size: 18px;
-        }
-
-        .contenu {
-            background-color: white;
-            width: 70%;
-            margin: 40px auto;
-            padding: 30px;
-            border-radius: 15px;
-        }
-
-        input {
-            padding: 10px;
-            border: 1px solid #aaa;
-            border-radius: 5px;
-        }
-
-        button {
-            padding: 10px 15px;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-
-        button:hover {
-            background-color: #2563eb;
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        #ui-layer {
+            position: absolute; top: 20px; left: 20px; color: white;
+            font-family: 'Courier New', Courier, monospace; z-index: 10;
+            background: rgba(0, 0, 0, 0.8); padding: 15px;
+            border-radius: 8px; border: 2px solid #e06666;
+            box-shadow: 0 0 10px #e06666;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-
 <body>
 
-    <h1>🌍 Passport Quest</h1>
-
-    <div class="contenu">
-
-        <p>Découvre les pays du monde !</p>
-
-        <input type="text" placeholder="Rechercher un pays">
-
-        <button>Rechercher</button>
-
-        <h2>🗺️ Carte du monde</h2>
-
-        <p>La carte interactive sera bientôt disponible.</p>
-
+    <div id="ui-layer">
+        <h2>MISSION MARS</h2>
+        <p>Statut : Déployé</p>
+        <p><i>Déplacement : Z Q S D / Flèches</i></p>
     </div>
 
-</body>
+    <script>
+        // --- 1. SCÈNE, CAMÉRA, RENDU ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x2a0a05); // Ciel sombre martien
+        scene.fog = new THREE.FogExp2(0x2a0a05, 0.05);
 
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // --- 2. LUMIÈRES ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const sunLight = new THREE.DirectionalLight(0xff7700, 1.2);
+        sunLight.position.set(15, 25, 10);
+        scene.add(sunLight);
+
+        // --- 3. DÉCOR (Sol + Grille + Rochers 3D) ---
+        const groundGeometry = new THREE.PlaneGeometry(200, 200);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x732a19, roughness: 1 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        const gridHelper = new THREE.GridHelper(200, 100, 0x000000, 0x000000);
+        gridHelper.material.opacity = 0.15;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        // Génération de rochers 3D
+        const rockGeometry = new THREE.DodecahedronGeometry(1);
+        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x4a1c11, roughness: 0.8 });
+        for (let i = 0; i < 40; i++) {
+            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+            rock.position.x = (Math.random() - 0.5) * 100;
+            rock.position.z = (Math.random() - 0.5) * 100;
+            rock.position.y = 0.5;
+            
+            // Éviter de faire apparaître un rocher sur le joueur
+            if (Math.abs(rock.position.x) > 3 && Math.abs(rock.position.z) > 3) {
+                scene.add(rock);
+            }
+        }
+
+        // --- 4. PERSONNAGE 2D (Généré en code, pas besoin d'image !) ---
+        const canvas = document.createElement('canvas');
+        canvas.width = 64; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        
+        // Dessin de l'astronaute en Pixel Art
+        ctx.fillStyle = '#ffffff'; // Combinaison
+        ctx.fillRect(16, 20, 32, 40); // Corps
+        ctx.fillStyle = '#dddddd'; // Ombre / Casque
+        ctx.fillRect(12, 4, 40, 32); // Casque
+        ctx.fillStyle = '#00ccff'; // Visière
+        ctx.fillRect(20, 12, 24, 16); 
+        ctx.fillStyle = '#888888'; // Sac à dos et détails
+        ctx.fillRect(8, 20, 8, 30); // Bras gauche
+        ctx.fillRect(48, 20, 8, 30); // Bras droit
+        ctx.fillRect(16, 60, 12, 4); // Pied gauche
+        ctx.fillRect(36, 60, 12, 4); // Pied droit
+
+        const playerTexture = new THREE.CanvasTexture(canvas);
+        playerTexture.magFilter = THREE.NearestFilter; // Rendu Pixel-Art net
+        
+        const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
+        const player = new THREE.Sprite(playerMaterial);
+        player.scale.set(1.5, 1.5, 1); 
+        player.position.y = 0.75; 
+        scene.add(player);
+
+        // --- 5. CAMÉRA ET CONTRÔLES ---
+        const cameraOffset = new THREE.Vector3(0, 4, 8); 
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        const speed = 0.2;
+
+        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Mouvement
+            if (keys.w || keys.ArrowUp) player.position.z -= speed;
+            if (keys.s || keys.ArrowDown) player.position.z += speed;
+            if (keys.a || keys.ArrowLeft) player.position.x -= speed;
+            if (keys.d || keys.ArrowRight) player.position.x += speed;
+
+            // Suivi de caméra fluide
+            camera.position.x += (player.position.x + cameraOffset.x - camera.position.x) * 0.1;
+            camera.position.y += (player.position.y + cameraOffset.y - camera.position.y) * 0.1;
+            camera.position.z += (player.position.z + cameraOffset.z - camera.position.z) * 0.1;
+            camera.lookAt(player.position);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
+        animate();
+    </script>
+</body>
 </html>
