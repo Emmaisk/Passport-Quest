@@ -1,7 +1,281 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <meta http-equiv="refresh" content="0; url=index.3.html">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1 sur 8 milliards</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: white;
+      background: #080b16;
+      font-family: Arial, sans-serif;
+    }
+
+    #jeu {
+      width: 100%;
+      height: 100vh;
+      min-height: 500px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(#101b36 0%, #293b59 70%, #151a26 70%);
+    }
+
+    #interface {
+      position: absolute;
+      z-index: 2;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .panneau {
+      padding: 14px 18px;
+      background: #101522dd;
+      border: 1px solid #ffffff33;
+      border-radius: 12px;
+    }
+
+    #planete {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    #mission {
+      margin-top: 6px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+
+    #terrain {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 30%;
+      background: var(--couleur-terrain, #9f3826);
+      border-top: 5px solid #ffffff33;
+    }
+
+    #decor {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .rocher {
+      position: absolute;
+      bottom: 30%;
+      width: 70px;
+      height: 40px;
+      background: #171923;
+      clip-path: polygon(20% 100%, 0 60%, 30% 0, 75% 15%, 100% 100%);
+      opacity: 0.8;
+    }
+
+    #astronaute {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      width: 38px;
+      height: 62px;
+      transform: translateX(-50%);
+      font-size: 42px;
+      line-height: 62px;
+      text-align: center;
+      transition: left 0.08s linear;
+      z-index: 1;
+    }
+
+    #intro {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: #080b16dd;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #intro.conceal {
+      display: none;
+    }
+
+    .carte-intro {
+      max-width: 520px;
+      padding: 35px;
+      background: #111827;
+      border: 1px solid #ffffff33;
+      border-radius: 20px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(36px, 8vw, 64px);
+    }
+
+    .sous-titre {
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    button {
+      margin-top: 18px;
+      padding: 14px 24px;
+      border: 0;
+      border-radius: 10px;
+      background: #8b5cf6;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #a78bfa;
+    }
+
+    #message {
+      position: absolute;
+      z-index: 2;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 30px);
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: #101522dd;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      #interface {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+      }
+
+      .panneau {
+        padding: 10px;
+      }
+
+      #message {
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
-<body></body>
+
+<body>
+  <main id="jeu">
+    <div id="decor"></div>
+    <div id="terrain"></div>
+    <div id="astronaute">🧑‍🚀</div>
+
+    <section id="interface">
+      <div class="panneau">
+        <div id="planete">Destination inconnue</div>
+        <div id="mission">En attente du tirage au sort…</div>
+      </div>
+      <div class="panneau">🚀 1 sur 8 milliards</div>
+    </section>
+
+    <div id="message">Utilise ← → ou A / D pour explorer, et Espace pour sauter.</div>
+
+    <section id="intro">
+      <div class="carte-intro">
+        <h1>1 sur 8 milliards</h1>
+        <p class="sous-titre">
+          Un astronaute. Une mission. Une planète choisie au hasard.
+          <br>
+          Où vas-tu atterrir ?
+        </p>
+        <button id="demarrer">Lancer le tirage au sort</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const planetes = [
+      { nom: "Mercure", couleur: "#8b8177", ciel: "#34343c", mission: "Explore la surface brûlante." },
+      { nom: "Vénus", couleur: "#c88b38", ciel: "#70432c", mission: "Avance dans les nuages toxiques." },
+      { nom: "Terre", couleur: "#287a4b", ciel: "#5288c7", mission: "Découvre cette planète pleine de vie." },
+      { nom: "Mars", couleur: "#a8412d", ciel: "#9c4b39", mission: "Explore les plaines rouges." },
+      { nom: "Jupiter", couleur: "#a8754e", ciel: "#594638", mission: "Attention aux vents géants !" },
+      { nom: "Saturne", couleur: "#b9955f", ciel: "#75684c", mission: "Pars à la découverte des anneaux." },
+      { nom: "Uranus", couleur: "#57aeb3", ciel: "#28616c", mission: "Explore le monde glacé." },
+      { nom: "Neptune", couleur: "#315fd1", ciel: "#172b70", mission: "Survis aux tempêtes de glace." }
+    ];
+
+    const astronaute = document.getElementById("astronaute");
+    const jeu = document.getElementById("jeu");
+    const intro = document.getElementById("intro");
+    const decor = document.getElementById("decor");
+
+    let position = 50;
+    let enJeu = false;
+    let sautEnCours = false;
+
+    document.getElementById("demarrer").addEventListener("click", () => {
+      const planete = planetes[Math.floor(Math.random() * planetes.length)];
+
+      document.getElementById("planete").textContent = "🪐 " + planete.nom;
+      document.getElementById("mission").textContent = planete.mission;
+      jeu.style.background =
+        `linear-gradient(${planete.ciel} 0%, #293b59 70%, #151a26 70%)`;
+      document.documentElement.style.setProperty("--couleur-terrain", planete.couleur);
+
+      decor.innerHTML = "";
+      for (let i = 0; i < 10; i++) {
+        const rocher = document.createElement("div");
+        rocher.className = "rocher";
+        rocher.style.left = (i * 12 + Math.random() * 5) + "%";
+        rocher.style.transform = `scale(${0.5 + Math.random()})`;
+        decor.appendChild(rocher);
+      }
+
+      intro.classList.add("conceal");
+      enJeu = true;
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!enJeu) return;
+
+      if (["ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+        event.preventDefault();
+      }
+
+      if (event.key === "ArrowLeft" || event.key.toLowerCase() === "a") {
+        position = Math.max(3, position - 2);
+      }
+
+      if (event.key === "ArrowRight" || event.key.toLowerCase() === "d") {
+        position = Math.min(97, position + 2);
+      }
+
+      if (event.code === "Space" && !sautEnCours) {
+        sautEnCours = true;
+        astronaute.style.bottom = "48%";
+
+        setTimeout(() => {
+          astronaute.style.bottom = "30%";
+          sautEnCours = false;
+        }, 500);
+      }
+
+      astronaute.style.left = position + "%";
+    });
+  </script>
+</body>
 </html>
