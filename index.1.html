@@ -1,135 +1,756 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploration Spatiale - HD-2D Complet</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #ui-layer {
-            position: absolute; top: 20px; left: 20px; color: white;
-            font-family: 'Courier New', Courier, monospace; z-index: 10;
-            background: rgba(0, 0, 0, 0.8); padding: 15px;
-            border-radius: 8px; border: 2px solid #e06666;
-            box-shadow: 0 0 10px #e06666;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PassportQuest — Version 1</title>
+
+<style>
+:root {
+  --bg: #070e20;
+  --surface: #111e39;
+  --blue: #69bdff;
+  --white: #f4f8ff;
+  --muted: #a0aec9;
+  --border: rgba(255,255,255,.11);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--white);
+  font-family: "Segoe UI", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 72% 17%, #17447788, transparent 37%),
+    radial-gradient(circle at 8% 75%, #18315e77, transparent 37%),
+    radial-gradient(#ffffff44 1px, transparent 1px);
+  background-size: auto, auto, 65px 65px;
+  opacity: .85;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+/* NAVIGATION */
+
+header {
+  max-width: 1250px;
+  margin: auto;
+  padding: 25px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -.7px;
+}
+
+.logo span {
+  color: var(--blue);
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+nav a {
+  color: var(--muted);
+  font-size: 14px;
+  transition: .2s;
+}
+
+nav a:hover {
+  color: white;
+}
+
+.version {
+  color: #9dd8ff;
+  background: #68beff1b;
+  border: 1px solid #68beff55;
+  padding: 8px 14px;
+  border-radius: 40px;
+  font-size: 12px;
+}
+
+/* ACCUEIL */
+
+.hero {
+  max-width: 1250px;
+  min-height: 565px;
+  margin: auto;
+  padding: 75px 28px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: 30px;
+}
+
+.eyebrow {
+  color: #9bd7ff;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 22px 0;
+  font-size: clamp(42px, 5vw, 70px);
+  line-height: 1.1;
+  letter-spacing: -2px;
+}
+
+.hero h1 span {
+  background: linear-gradient(90deg, #73c7ff, #b6a0ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero p {
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.actions {
+  margin-top: 32px;
+  display: flex;
+  gap: 13px;
+  flex-wrap: wrap;
+}
+
+.primary,
+.secondary {
+  display: inline-block;
+  padding: 15px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: .2s;
+}
+
+.primary {
+  background: linear-gradient(135deg,#79ceff,#6c9eff);
+  color: #08142b;
+}
+
+.secondary {
+  border: 1px solid var(--border);
+  background: #ffffff0b;
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: translateY(-3px);
+}
+
+/* GLOBE ET ORBITES */
+
+.universe {
+  height: 440px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.glow {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: #2898ff;
+  filter: blur(90px);
+  opacity: .24;
+}
+
+.orbit {
+  position: absolute;
+  border: 1px solid #86c5ff3a;
+  border-radius: 50%;
+  transform: rotate(-24deg);
+}
+
+.orbit.one {
+  width: 390px;
+  height: 270px;
+}
+
+.orbit.two {
+  width: 450px;
+  height: 350px;
+  border-style: dashed;
+  opacity: .6;
+}
+
+.earth {
+  position: relative;
+  z-index: 1;
+  font-size: 230px;
+  line-height: 1;
+  filter: drop-shadow(0 0 30px #258fff8c);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+
+.floating {
+  position: absolute;
+  z-index: 2;
+  background: #102341e8;
+  backdrop-filter: blur(12px);
+  border: 1px solid #80bdff4a;
+  border-radius: 13px;
+  padding: 12px 17px;
+  box-shadow: 0 14px 40px #0005;
+  font-size: 13px;
+}
+
+.floating strong {
+  color: #8dd3ff;
+}
+
+.floating.left {
+  left: 0;
+  top: 90px;
+}
+
+.floating.right {
+  right: 0;
+  bottom: 85px;
+}
+
+/* MODES */
+
+.section {
+  max-width: 1250px;
+  padding: 50px 28px 90px;
+  margin: auto;
+}
+
+.section-top {
+  margin-bottom: 30px;
+}
+
+.section-top h2 {
+  font-size: clamp(28px, 4vw, 38px);
+  margin: 10px 0;
+}
+
+.section-top p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.mode {
+  appearance: none;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: linear-gradient(150deg,#1c3053,#0d1930);
+  border-radius: 22px;
+  padding: 25px;
+  min-height: 270px;
+  transition: .25s;
+}
+
+.mode:hover {
+  transform: translateY(-6px);
+  border-color: #7dbfff99;
+}
+
+.mode.active {
+  border-color: #80caff;
+  box-shadow: 0 0 0 1px #80caff55, 0 15px 45px #0003;
+}
+
+.mode-icon {
+  width: 65px;
+  height: 65px;
+  border-radius: 18px;
+  background: #79bfff18;
+  display: grid;
+  place-items: center;
+  font-size: 35px;
+  margin-bottom: 23px;
+}
+
+.mode h3 {
+  margin: 0 0 10px;
+  font-size: 21px;
+}
+
+.mode p {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.mode-bottom {
+  display: block;
+  color: #91d4ff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 20px;
+}
+
+/* PANNEAU INTERACTIF */
+
+.preview {
+  margin-top: 24px;
+  background: linear-gradient(115deg,#152e51,#101d36);
+  border: 1px solid #8bc7ff38;
+  border-radius: 23px;
+  padding: 35px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+}
+
+.preview-tag {
+  font-size: 12px;
+  color: #95d8ff;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.preview h3 {
+  margin: 12px 0;
+  font-size: 26px;
+}
+
+.preview p {
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 700px;
+  margin-bottom: 0;
+}
+
+.preview-symbol {
+  font-size: 75px;
+  filter: drop-shadow(0 5px 20px #5a9dff55);
+}
+
+/* A PROPOS */
+
+.about {
+  border-top: 1px solid var(--border);
+  background: #0b1730;
+  padding: 65px 25px;
+  text-align: center;
+}
+
+.about h2 {
+  font-size: 30px;
+}
+
+.about p {
+  color: var(--muted);
+  max-width: 650px;
+  margin: 15px auto;
+  line-height: 1.8;
+}
+
+footer {
+  padding: 23px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding-top: 50px;
+  }
+
+  .hero p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .actions {
+    justify-content: center;
+  }
+
+  .universe {
+    height: 350px;
+  }
+
+  .earth {
+    font-size: 180px;
+  }
+
+  .orbit.one {
+    width: 300px;
+    height: 220px;
+  }
+
+  .orbit.two {
+    width: 350px;
+    height: 270px;
+  }
+
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  header {
+    padding: 18px;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  nav {
+    gap: 10px;
+  }
+
+  nav a {
+    font-size: 12px;
+  }
+
+  .version {
+    display: none;
+  }
+
+  .universe {
+    height: 310px;
+  }
+
+  .floating {
+    font-size: 11px;
+    padding: 9px;
+  }
+
+  .floating.left {
+    left: 0;
+    top: 48px;
+  }
+
+  .floating.right {
+    bottom: 35px;
+  }
+
+  .preview {
+    padding: 24px;
+  }
+
+  .preview-symbol {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
 </head>
+
 <body>
 
-    <div id="ui-layer">
-        <h2>MISSION MARS</h2>
-        <p>Statut : Déployé</p>
-        <p><i>Déplacement : Z Q S D / Flèches</i></p>
+<!-- BARRE DE NAVIGATION -->
+<header>
+  <a href="#accueil" class="logo">
+    🌍 Passport<span>Quest</span>
+  </a>
+
+  <nav>
+    <a href="#accueil">Accueil</a>
+    <a href="#modes">Les modes</a>
+    <a href="#apropos">À propos</a>
+  </nav>
+
+  <span class="version">VERSION 1.0</span>
+</header>
+
+<!-- PAGE D'ACCUEIL -->
+<main class="hero" id="accueil">
+
+  <div>
+    <div class="eyebrow">
+      ✦ LE MONDE T'ATTEND
     </div>
 
-    <script>
-        // --- 1. SCÈNE, CAMÉRA, RENDU ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x2a0a05); // Ciel sombre martien
-        scene.fog = new THREE.FogExp2(0x2a0a05, 0.05);
+    <h1>
+      Explore le monde.<br>
+      <span>Défie tes connaissances.</span>
+    </h1>
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+    <p>
+      Des lieux emblématiques aux grands événements
+      géopolitiques, découvre notre planète autrement.
+      Observe, réfléchis et prépare-toi à relever
+      des défis aux quatre coins du monde.
+    </p>
 
-        // --- 2. LUMIÈRES ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        
-        const sunLight = new THREE.DirectionalLight(0xff7700, 1.2);
-        sunLight.position.set(15, 25, 10);
-        scene.add(sunLight);
+    <div class="actions">
+      <a class="primary" href="#modes">
+        Explorer les modes →
+      </a>
 
-        // --- 3. DÉCOR (Sol + Grille + Rochers 3D) ---
-        const groundGeometry = new THREE.PlaneGeometry(200, 200);
-        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x732a19, roughness: 1 });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
+      <a class="secondary" href="#apropos">
+        Découvrir le projet
+      </a>
+    </div>
+  </div>
 
-        const gridHelper = new THREE.GridHelper(200, 100, 0x000000, 0x000000);
-        gridHelper.material.opacity = 0.15;
-        gridHelper.material.transparent = true;
-        scene.add(gridHelper);
+  <!-- ANIMATION DU GLOBE -->
+  <div class="universe" aria-label="Illustration de la Terre">
 
-        // Génération de rochers 3D
-        const rockGeometry = new THREE.DodecahedronGeometry(1);
-        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x4a1c11, roughness: 0.8 });
-        for (let i = 0; i < 40; i++) {
-            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-            rock.position.x = (Math.random() - 0.5) * 100;
-            rock.position.z = (Math.random() - 0.5) * 100;
-            rock.position.y = 0.5;
-            
-            // Éviter de faire apparaître un rocher sur le joueur
-            if (Math.abs(rock.position.x) > 3 && Math.abs(rock.position.z) > 3) {
-                scene.add(rock);
-            }
-        }
+    <div class="glow"></div>
+    <div class="orbit one"></div>
+    <div class="orbit two"></div>
 
-        // --- 4. PERSONNAGE 2D (Généré en code, pas besoin d'image !) ---
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        
-        // Dessin de l'astronaute en Pixel Art
-        ctx.fillStyle = '#ffffff'; // Combinaison
-        ctx.fillRect(16, 20, 32, 40); // Corps
-        ctx.fillStyle = '#dddddd'; // Ombre / Casque
-        ctx.fillRect(12, 4, 40, 32); // Casque
-        ctx.fillStyle = '#00ccff'; // Visière
-        ctx.fillRect(20, 12, 24, 16); 
-        ctx.fillStyle = '#888888'; // Sac à dos et détails
-        ctx.fillRect(8, 20, 8, 30); // Bras gauche
-        ctx.fillRect(48, 20, 8, 30); // Bras droit
-        ctx.fillRect(16, 60, 12, 4); // Pied gauche
-        ctx.fillRect(36, 60, 12, 4); // Pied droit
+    <div class="earth" aria-hidden="true">🌎</div>
 
-        const playerTexture = new THREE.CanvasTexture(canvas);
-        playerTexture.magFilter = THREE.NearestFilter; // Rendu Pixel-Art net
-        
-        const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
-        const player = new THREE.Sprite(playerMaterial);
-        player.scale.set(1.5, 1.5, 1); 
-        player.position.y = 0.75; 
-        scene.add(player);
+    <div class="floating left">
+      📍 <strong>Explore</strong> les pays
+    </div>
 
-        // --- 5. CAMÉRA ET CONTRÔLES ---
-        const cameraOffset = new THREE.Vector3(0, 4, 8); 
-        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-        const speed = 0.2;
+    <div class="floating right">
+      ✨ <strong>Découvre</strong> le monde
+    </div>
 
-        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+  </div>
 
-        function animate() {
-            requestAnimationFrame(animate);
+</main>
 
-            // Mouvement
-            if (keys.w || keys.ArrowUp) player.position.z -= speed;
-            if (keys.s || keys.ArrowDown) player.position.z += speed;
-            if (keys.a || keys.ArrowLeft) player.position.x -= speed;
-            if (keys.d || keys.ArrowRight) player.position.x += speed;
+<!-- LES MODES DE JEU -->
+<section class="section" id="modes">
 
-            // Suivi de caméra fluide
-            camera.position.x += (player.position.x + cameraOffset.x - camera.position.x) * 0.1;
-            camera.position.y += (player.position.y + cameraOffset.y - camera.position.y) * 0.1;
-            camera.position.z += (player.position.z + cameraOffset.z - camera.position.z) * 0.1;
-            camera.lookAt(player.position);
+  <div class="section-top">
+    <div class="eyebrow">CHOISIS TON DÉFI</div>
 
-            renderer.render(scene, camera);
-        }
+    <h2>Un monde, plusieurs aventures.</h2>
 
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
+    <p>
+      Sélectionne une catégorie pour découvrir
+      les défis qui t'attendent.
+    </p>
+  </div>
 
-        animate();
-    </script>
+  <div class="mode-grid">
+
+    <button
+      class="mode active"
+      type="button"
+      data-mode="monde"
+      aria-pressed="true"
+    >
+      <div class="mode-icon">🌍</div>
+      <h3>Quiz du monde</h3>
+      <p>
+        Teste tes connaissances sur les pays,
+        leurs capitales et les relations internationales.
+      </p>
+      <span class="mode-bottom">Découvrir ce mode →</span>
+    </button>
+
+    <button
+      class="mode"
+      type="button"
+      data-mode="images"
+      aria-pressed="false"
+    >
+      <div class="mode-icon">📸</div>
+      <h3>Images mystères</h3>
+      <p>
+        Observe des photos emblématiques et
+        découvre les lieux qui ont marqué le monde.
+      </p>
+      <span class="mode-bottom">Découvrir ce mode →</span>
+    </button>
+
+    <button
+      class="mode"
+      type="button"
+      data-mode="mystere"
+      aria-pressed="false"
+    >
+      <div class="mode-icon">🧩</div>
+      <h3>Pays mystère</h3>
+      <p>
+        Retrouve un pays caché en utilisant
+        des indices historiques et géographiques.
+      </p>
+      <span class="mode-bottom">Découvrir ce mode →</span>
+    </button>
+
+  </div>
+
+  <!-- APERCU QUI CHANGE SELON LE MODE -->
+  <div class="preview" aria-live="polite">
+
+    <div>
+      <div class="preview-tag">APERÇU DU MODE</div>
+
+      <h3 id="preview-title">Quiz du monde</h3>
+
+      <p id="preview-description">
+        Des questions sur la géographie et la géopolitique.
+        Choisis la bonne réponse, accumule des points
+        et enrichis tes connaissances.
+      </p>
+    </div>
+
+    <div class="preview-symbol" id="preview-icon"
+         aria-hidden="true">
+      🌍
+    </div>
+
+  </div>
+
+</section>
+
+<!-- A PROPOS -->
+<section class="about" id="apropos">
+
+  <div class="eyebrow">À PROPOS</div>
+
+  <h2>Bienvenue dans PassportQuest</h2>
+
+  <p>
+    PassportQuest est un jeu éducatif interactif
+    consacré à la découverte du monde.
+    Il associe géographie, géopolitique,
+    culture générale et reconnaissance visuelle.
+  </p>
+
+  <p>
+    Ce projet évolue progressivement :
+    de la création de l'interface jusqu'à
+    l'intégration de quiz, de cartes et de données
+    provenant d'API.
+  </p>
+
+</section>
+
+<footer>
+  PassportQuest © 2026 — Projet étudiant — Version 1
+</footer>
+
+<script>
+// VERSION 1 : NAVIGATION ENTRE LES MODES
+
+// Informations présentées pour chaque mode
+const modes = {
+  monde: {
+    title: "Quiz du monde",
+    description:
+      "Des questions sur la géographie et la géopolitique. " +
+      "Choisis la bonne réponse, accumule des points " +
+      "et enrichis tes connaissances.",
+    icon: "🌍"
+  },
+
+  images: {
+    title: "Images mystères",
+    description:
+      "Une photographie célèbre apparaît à l'écran. " +
+      "À toi de deviner dans quel pays ou quelle ville " +
+      "elle a été prise !",
+    icon: "📸"
+  },
+
+  mystere: {
+    title: "Pays mystère",
+    description:
+      "Tu disposes de plusieurs indices pour identifier " +
+      "un pays mystérieux. Chaque indice t'aide à " +
+      "trouver la bonne réponse.",
+    icon: "🧩"
+  }
+};
+
+// Sélection de tous les boutons
+const boutons = document.querySelectorAll(".mode");
+
+// Fonction appelée lorsque le joueur sélectionne un mode
+function choisirMode(nom) {
+  const mode = modes[nom];
+
+  if (!mode) return;
+
+  document.getElementById("preview-title").textContent =
+    mode.title;
+
+  document.getElementById("preview-description").textContent =
+    mode.description;
+
+  document.getElementById("preview-icon").textContent =
+    mode.icon;
+
+  // Met à jour le style du mode sélectionné
+  boutons.forEach(bouton => {
+    const actif = bouton.dataset.mode === nom;
+
+    bouton.classList.toggle("active", actif);
+    bouton.setAttribute("aria-pressed", String(actif));
+  });
+}
+
+// On ajoute un événement à chaque bouton
+boutons.forEach(bouton => {
+  bouton.addEventListener("click", () => {
+    choisirMode(bouton.dataset.mode);
+  });
+});
+</script>
+
 </body>
 </html>
