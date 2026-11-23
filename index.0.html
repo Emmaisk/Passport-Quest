@@ -1,109 +1,379 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploration Spatiale - Mars</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden; /* Empêche le défilement de la page */
-            background-color: #000;
-        }
-        #ui-layer {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            font-family: Arial, sans-serif;
-            z-index: 10;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 8px;
-        }
-    </style>
-    <!-- Importation de Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassportQuest - Version 0</title>
+
+  <style>
+    /* COULEURS PRINCIPALES */
+    :root {
+      --fond: #080f23;
+      --bleu: #6bbcff;
+      --texte: #ffffff;
+      --secondaire: #aabbd4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: var(--texte);
+      background:
+        radial-gradient(circle at 80% 20%, #173e69, transparent 40%),
+        radial-gradient(circle at 10% 80%, #142849, transparent 40%),
+        var(--fond);
+      min-height: 100vh;
+    }
+
+    /* BARRE DE NAVIGATION */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 25px 8%;
+      border-bottom: 1px solid #ffffff18;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 23px;
+      color: white;
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: var(--bleu);
+    }
+
+    nav a {
+      color: var(--secondaire);
+      text-decoration: none;
+      margin-left: 25px;
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      color: white;
+    }
+
+    /* PAGE D'ACCUEIL */
+    .hero {
+      max-width: 1200px;
+      margin: auto;
+      min-height: 510px;
+      padding: 80px 7%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .hero-texte {
+      max-width: 570px;
+    }
+
+    .etiquette {
+      display: inline-block;
+      padding: 9px 15px;
+      border-radius: 30px;
+      background: #64bbff1c;
+      border: 1px solid #64bbff45;
+      color: #9bd7ff;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: clamp(38px, 5vw, 62px);
+      line-height: 1.13;
+      margin: 25px 0;
+    }
+
+    h1 span {
+      color: var(--bleu);
+    }
+
+    .description {
+      color: var(--secondaire);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .bouton {
+      display: inline-block;
+      margin-top: 24px;
+      background: var(--bleu);
+      color: #07152b;
+      padding: 16px 27px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .bouton:hover {
+      background: #a6ddff;
+      transform: translateY(-3px);
+    }
+
+    /* NOTRE GLOBE */
+    .globe-zone {
+      position: relative;
+      flex-shrink: 0;
+      width: 320px;
+      height: 320px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .globe-zone::before {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: #419cff;
+      filter: blur(75px);
+      opacity: 0.24;
+    }
+
+    .globe {
+      font-size: 230px;
+      position: relative;
+      filter: drop-shadow(0 0 35px #378dff66);
+      animation: flotter 5s ease-in-out infinite;
+    }
+
+    @keyframes flotter {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-16px); }
+    }
+
+    /* MODES DE JEU */
+    .section-modes {
+      padding: 35px 8% 90px;
+      max-width: 1300px;
+      margin: auto;
+    }
+
+    .section-modes h2 {
+      font-size: 30px;
+      margin-bottom: 12px;
+    }
+
+    .sous-titre {
+      color: var(--secondaire);
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .grille {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .carte {
+      padding: 28px;
+      background: #142440b3;
+      border: 1px solid #ffffff1f;
+      border-radius: 19px;
+      transition: 0.2s;
+    }
+
+    .carte:hover {
+      transform: translateY(-5px);
+      border-color: #6bbcff80;
+    }
+
+    .icone {
+      font-size: 38px;
+      margin-bottom: 20px;
+    }
+
+    .carte h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .carte p {
+      color: var(--secondaire);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .statut {
+      display: inline-block;
+      color: #8fd2ff;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    /* PIED DE PAGE */
+    footer {
+      padding: 30px;
+      text-align: center;
+      color: var(--secondaire);
+      border-top: 1px solid #ffffff18;
+      font-size: 13px;
+    }
+
+    /* ADAPTATION AUX PETITS ECRANS */
+    @media (max-width: 800px) {
+      header {
+        padding: 20px;
+      }
+
+      nav a {
+        margin-left: 12px;
+      }
+
+      .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 60px 25px 30px;
+        gap: 5px;
+      }
+
+      .globe-zone {
+        width: 250px;
+        height: 250px;
+      }
+
+      .globe {
+        font-size: 180px;
+      }
+
+      .grille {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-    <div id="ui-layer">
-        <h2>Planète : Mars</h2>
-        <p>Objectif : Explorer les environs</p>
-        <p><i>Contrôles : Z Q S D ou Flèches directionnelles</i></p>
+  <!-- NAVIGATION -->
+  <header>
+    <a href="#accueil" class="logo">
+      🌐 Passport<span>Quest</span>
+    </a>
+
+    <nav>
+      <a href="#accueil">Accueil</a>
+      <a href="#modes">Les quiz</a>
+    </nav>
+  </header>
+
+  <!-- ACCUEIL -->
+  <main class="hero" id="accueil">
+
+    <div class="hero-texte">
+
+      <div class="etiquette">
+        🌍 EXPLORE LE MONDE
+      </div>
+
+      <h1>
+        Le monde est un jeu.
+        <span>À toi de jouer.</span>
+      </h1>
+
+      <p class="description">
+        Découvre les pays, les monuments emblématiques
+        et les grands événements géopolitiques.
+
+        Teste tes connaissances et apprends à mieux
+        comprendre le monde qui t'entoure.
+      </p>
+
+      <a class="bouton" href="#modes">
+        Découvrir les quiz →
+      </a>
+
     </div>
 
-    <script>
-        // 1. INITIALISATION DE LA SCÈNE, CAMÉRA ET RENDU
-        const scene = new THREE.Scene();
-        // Couleur de fond (ciel martien sombre/orangé)
-        scene.background = new THREE.Color(0x3a1008); 
-        scene.fog = new THREE.Fog(0x3a1008, 10, 50); // Ajoute du brouillard pour la profondeur
+    <div class="globe-zone" aria-hidden="true">
+      <div class="globe">🌍</div>
+    </div>
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+  </main>
 
-        // 2. CRÉATION DE L'ENVIRONNEMENT (Le sol de Mars)
-        const groundGeometry = new THREE.PlaneGeometry(200, 200);
-        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x8c3a21 }); // Rouge/Orange martien
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2; // Met le plan à l'horizontale
-        scene.add(ground);
+  <!-- CATEGORIES -->
+  <section class="section-modes" id="modes">
 
-        // 3. CRÉATION DU PERSONNAGE (Sprite 2D - Style HD-2D)
-        // Pour l'instant, on utilise un carré blanc/bleu. Plus tard, tu pourras charger une vraie image PNG transparente.
-        const playerCanvas = document.createElement('canvas');
-        playerCanvas.width = 64; playerCanvas.height = 64;
-        const ctx = playerCanvas.getContext('2d');
-        ctx.fillStyle = '#00aaff'; // Couleur de la combinaison de base
-        ctx.fillRect(16, 16, 32, 48); // Forme grossière d'un personnage
-        
-        const playerTexture = new THREE.CanvasTexture(playerCanvas);
-        const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
-        const player = new THREE.Sprite(playerMaterial);
-        player.scale.set(2, 2, 1); // Taille du personnage
-        player.position.y = 1; // Le remonte pour qu'il soit sur le sol
-        scene.add(player);
+    <h2>Choisis ton aventure</h2>
 
-        // 4. POSITION INITIALE DE LA CAMÉRA
-        const cameraOffset = new THREE.Vector3(0, 5, 10); // Caméra en hauteur et en arrière
+    <p class="sous-titre">
+      Plusieurs façons de tester tes connaissances
+      et de découvrir notre planète.
+    </p>
 
-        // 5. GESTION DES CONTRÔLES (Clavier)
-        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-        const speed = 0.15;
+    <div class="grille">
 
-        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+      <article class="carte">
+        <div class="icone">🌐</div>
 
-        // 6. BOUCLE D'ANIMATION ET LOGIQUE DU JEU
-        function animate() {
-            requestAnimationFrame(animate);
+        <h3>Quiz du monde</h3>
 
-            // Mouvements du joueur
-            if (keys.w || keys.ArrowUp) player.position.z -= speed;
-            if (keys.s || keys.ArrowDown) player.position.z += speed;
-            if (keys.a || keys.ArrowLeft) player.position.x -= speed;
-            if (keys.d || keys.ArrowRight) player.position.x += speed;
+        <p>
+          Géographie, capitales, frontières
+          et questions de géopolitique.
+        </p>
 
-            // La caméra suit le joueur
-            camera.position.x = player.position.x + cameraOffset.x;
-            camera.position.y = player.position.y + cameraOffset.y;
-            camera.position.z = player.position.z + cameraOffset.z;
-            camera.lookAt(player.position);
+        <span class="statut">
+          Bientôt disponible
+        </span>
+      </article>
 
-            renderer.render(scene, camera);
-        }
+      <article class="carte">
+        <div class="icone">📸</div>
 
-        // Gérer le redimensionnement de la fenêtre
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
+        <h3>Images mystères</h3>
 
-        animate();
-    </script>
+        <p>
+          Observe des photographies de lieux
+          emblématiques et devine où elles ont été prises.
+        </p>
+
+        <span class="statut">
+          Bientôt disponible
+        </span>
+      </article>
+
+      <article class="carte">
+        <div class="icone">🧩</div>
+
+        <h3>Pays mystère</h3>
+
+        <p>
+          Retrouve un pays à l'aide d'indices
+          sur son histoire, sa culture et sa géographie.
+        </p>
+
+        <span class="statut">
+          Bientôt disponible
+        </span>
+      </article>
+
+    </div>
+
+  </section>
+
+  <!-- PIED DE PAGE -->
+  <footer>
+    PassportQuest © 2026 — Projet étudiant — Version 0
+  </footer>
+
 </body>
 </html>
