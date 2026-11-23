@@ -1,249 +1,355 @@
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alien Escape - HD-2D</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PassportQuest — Version 4</title>
 <style>
-* { box-sizing: border-box; }
-body { margin: 0; overflow: hidden; background: #000; font-family: 'Georgia', serif; user-select: none; }
-canvas { display: block; }
-#ui-layer { position: absolute; top: 20px; left: 20px; color: white; background: linear-gradient(135deg, rgba(15,20,30,.95), rgba(0,0,0,.8)); padding: 15px 25px; border-radius: 8px; border: 2px solid #555; box-shadow: 0 5px 30px rgba(0,0,0,.8); z-index: 10; backdrop-filter: blur(5px); }
-#level-name { margin: 0 0 5px; text-transform: uppercase; letter-spacing: 3px; font-size: 1.3rem; text-shadow: 2px 2px 5px #000; }
-#level-desc { color: #ccc; font-size: 0.95rem; font-style: italic; margin: 0; }
-#controls { margin-top: 15px; color: #888; font: 12px 'Segoe UI', sans-serif; }
-#interaction-hint { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.85); color: white; padding: 12px 25px; border-radius: 25px; font: 15px 'Segoe UI', sans-serif; display: none; z-index: 15; border: 1px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
-#dialogue-box { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: linear-gradient(to bottom, #2b2b2b, #111); color: white; padding: 20px 30px; border-radius: 8px; border: 2px solid #d4af37; font-size: 1.1rem; display: none; box-shadow: 0 10px 40px rgba(0,0,0,.9); z-index: 20; width: 60%; max-width: 700px; }
-#dialogue-name { color: #e5c35a; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
-#dialogue-text { margin: 0; }
-#dialogue-footer { margin-top: 10px; font: 12px 'Segoe UI', sans-serif; color: #777; }
-#fade-screen { position: absolute; inset: 0; background: black; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 1s; }
+:root{--bg:#080f22;--card:#142441;--blue:#77c6ff;--purple:#b4a8ff;--white:#f4f7ff;--muted:#a7b8d4;--line:#ffffff22;--green:#73e0b2;--red:#ff97aa}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--white);font-family:Segoe UI,Arial,sans-serif;background:radial-gradient(ellipse at 80% 15%,#14345d,transparent 46%),radial-gradient(ellipse at 5% 90%,#1b2450,transparent 42%),var(--bg);min-height:100vh}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:4px}[hidden]{display:none!important}a{color:#9cdbff}
+header{max-width:1220px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:25px 26px}.logo{background:none;border:0;color:white;font-size:25px;font-weight:800;letter-spacing:-.6px}.logo span{color:var(--blue)}nav{display:flex;gap:22px}nav button{border:0;background:none;color:var(--muted)}nav button:hover{color:#fff}.version,.tag{border:1px solid #7ac6ff55;background:#7ac6ff12;border-radius:30px;color:#b4e0ff;font-size:12px;padding:9px 14px}
+.hero{max-width:1220px;margin:auto;padding:72px 26px 85px;display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:35px}.eyebrow{font-size:12px;color:#9cdbff;letter-spacing:2px;font-weight:800}.hero h1{font-size:clamp(43px,5.5vw,70px);letter-spacing:-2px;line-height:1.12;margin:25px 0}.gradient{background:linear-gradient(90deg,#6ecaff,#b6a4ff);background-clip:text;-webkit-background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:17px;line-height:1.8;max-width:520px}.primary,.secondary{border-radius:13px;padding:15px 23px;font-weight:800;transition:transform .2s}.primary{border:0;color:#08162b;background:linear-gradient(115deg,#79d0ff,#82a4ff)}.secondary{border:1px solid var(--line);background:#ffffff12;color:white}.primary:not(:disabled):hover,.secondary:not(:disabled):hover{transform:translateY(-3px)}button:disabled{opacity:.55;cursor:not-allowed}.hero .primary{margin-top:22px}
+.globe-area{height:410px;display:grid;place-items:center;position:relative}.globe-area:before{content:"";position:absolute;width:300px;height:300px;background:#228fff;filter:blur(90px);opacity:.24;border-radius:50%}.orbit{position:absolute;border:1px solid #8fcaff5c;border-radius:50%;width:390px;height:270px;transform:rotate(-24deg)}.earth{position:relative;font-size:230px;filter:drop-shadow(0 0 30px #289dff66);animation:float 5s ease-in-out infinite}@keyframes float{50%{transform:translateY(-17px)}}.floating{position:absolute;background:#102340ec;border:1px solid #79c4ff6b;border-radius:12px;padding:13px 16px;color:#c3e9ff;font-size:13px}.floating.one{top:65px;left:0}.floating.two{right:0;bottom:70px}
+.section{max-width:1220px;padding:30px 26px 88px;margin:auto}.section h2{font-size:35px;margin:12px 0}.subtitle{color:var(--muted);line-height:1.7;margin-bottom:30px}.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:19px}.mode{background:linear-gradient(155deg,#1c3258,#111e38);border:1px solid var(--line);border-radius:22px;padding:28px;display:flex;flex-direction:column;min-height:310px}.mode.featured{border-color:#73c8ff88}.mode-icon{font-size:35px;display:grid;place-items:center;width:64px;height:64px;background:#81bfff18;border-radius:18px;margin-bottom:21px}.mode h3{font-size:22px;margin:0 0 12px}.mode p{font-size:14px;line-height:1.8;color:var(--muted);flex:1}.mode .primary{margin-top:16px;width:100%}.soon{font-size:13px;color:#b7d8ff;margin-top:18px}
+.quiz-layout{max-width:940px;margin:40px auto 100px;padding:0 23px}.quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px}.quiz-label{font-size:14px;font-weight:800;color:#abdfff}.score{border:1px solid #8bc9ff55;background:#8bc9ff17;padding:11px 15px;border-radius:12px;font-weight:800}.progress{background:#263759;height:8px;border-radius:50px;overflow:hidden;margin-bottom:25px}.progress-fill{height:100%;background:linear-gradient(90deg,#68ccff,#b6a5ff);width:0;transition:width .3s}.quiz-card{background:linear-gradient(145deg,#182d50,#0f1c36);border:1px solid var(--line);box-shadow:0 24px 70px #0003;border-radius:24px;padding:35px}.question{font-size:clamp(24px,3.4vw,32px);line-height:1.4;margin:25px 0}/* V4 : chaque photographie est entière, sans recadrage */
+.photo-frame{
+  position:relative;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  height:clamp(240px,38vh,360px);
+  margin:20px 0;
+  border-radius:17px;
+  border:1px solid #ffffff20;
+  background:radial-gradient(ellipse at center,#173053,#08152c);
+}
+.photo-frame img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+  object-position:center;
+}.photo-status{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#c5ddf5;background:#0e213c;padding:22px}.credit{color:#b2c4df;font-size:12px;line-height:1.6;margin:8px 0 25px}.credit a{margin-left:8px}.answers{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.answer{text-align:left;background:#10213e;border:1px solid #ffffff22;border-radius:13px;padding:18px;color:white;font-weight:650;min-height:70px;transition:.2s}.answer:not(:disabled):hover{background:#203e66;border-color:#7dcaff}.answer.correct{background:#143e39;border-color:var(--green);color:#b6f9df}.answer.wrong{background:#492638;border-color:var(--red);color:#ffd7df}.feedback{border-radius:14px;margin-top:24px;padding:19px;line-height:1.7;font-size:14px}.feedback.success{background:#2bcc8f12;border:1px solid #6ce2ad66}.feedback.error{background:#f66f9812;border:1px solid #ff819977}.quiz-actions{display:flex;justify-content:flex-end;margin-top:24px}
+.center-screen{max-width:680px;margin:65px auto 110px;padding:48px 30px;text-align:center;background:linear-gradient(155deg,#20365b,#111d37);border:1px solid #ffffff25;border-radius:25px}.big-icon{font-size:66px}.center-screen h2{font-size:34px;margin:18px 0}.center-screen p{line-height:1.8;color:var(--muted)}.final-score{font-size:70px;color:#91d0ff;font-weight:900;margin:22px 0}.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}footer{text-align:center;padding:25px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+@media(max-width:850px){.hero{grid-template-columns:1fr;text-align:center;padding-top:40px}.hero p{margin:0 auto}.globe-area{height:310px}.earth{font-size:170px}.orbit{width:290px;height:210px}.modes{grid-template-columns:1fr}.mode{min-height:0}.answers{grid-template-columns:1fr}}
+@media(max-width:540px){header{padding:18px}.logo{font-size:19px}nav{gap:11px}nav button{font-size:12px}.version{display:none}.quiz-card{padding:20px}.hero h1{font-size:41px}.floating{font-size:10px;padding:9px}.photo-frame{height:clamp(210px,34vh,280px)}.center-screen{margin:35px 16px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+<header>
+  <button class="logo" id="headerHome">🌍 Passport<span>Quest</span></button>
+  <nav><button id="navHome">Accueil</button><button id="navModes">Les modes</button></nav>
+  <span class="version">VERSION 4.0</span>
+</header>
 
-<div id="ui-layer">
-    <h2 id="level-name">Niveau</h2>
-    <p id="level-desc">Objectif</p>
-    <div id="controls">Z Q S D : Déplacements | ESPACE : Sauter | E : Interagir</div>
+<div id="homeScreen">
+  <main class="hero">
+    <div>
+      <div class="eyebrow">✦ UNE AVENTURE À TRAVERS LE MONDE</div>
+      <h1>Explore le monde.<br><span class="gradient">Défie tes connaissances.</span></h1>
+      <p>Des lieux emblématiques aux grands événements géopolitiques : découvre notre planète, reconnais des monuments célèbres et relève des défis.</p>
+      <button class="primary" id="heroStart">Commencer à jouer →</button>
+    </div>
+    <div class="globe-area" aria-label="Illustration du globe terrestre">
+      <div class="orbit"></div><div class="earth" aria-hidden="true">🌎</div>
+      <div class="floating one">📸 Devine le lieu</div>
+      <div class="floating two">🌍 Explore les pays</div>
+    </div>
+  </main>
+  <section class="section" id="modes">
+    <div class="eyebrow">À TOI DE JOUER</div>
+    <h2>Choisis ton défi</h2>
+    <p class="subtitle">Deux modes jouables, pour apprendre tout en t'amusant.</p>
+    <div class="modes">
+      <article class="mode featured">
+        <div class="mode-icon">🌍</div><h3>Quiz du monde</h3>
+        <p>10 questions de géographie, d'histoire et de relations internationales. Gagne un point par bonne réponse.</p>
+        <button class="primary" id="geoStart">Jouer au quiz →</button>
+      </article>
+      <article class="mode featured">
+        <div class="mode-icon">📸</div><h3>Images mystères</h3>
+        <p>De vraies photographies provenant de Wikimedia Commons. Retrouve leur pays et découvre les lieux emblématiques.</p>
+        <button class="primary" id="photoStart">Deviner les lieux →</button>
+      </article>
+      <article class="mode">
+        <div class="mode-icon">🧩</div><h3>Pays mystère</h3>
+        <p>Un pays caché et plusieurs indices pour le retrouver. Ce mode arrivera dans une prochaine version.</p>
+        <span class="soon">🔒 Prochaine version</span>
+      </article>
+    </div>
+  </section>
 </div>
-<div id="interaction-hint">Appuyez sur [E]</div>
-<div id="dialogue-box">
-    <div id="dialogue-name">Nom</div>
-    <div id="dialogue-text">Texte</div>
-    <div id="dialogue-footer">Appuyez sur E pour fermer</div>
-</div>
-<div id="fade-screen"></div>
+
+<section class="center-screen" id="loadingScreen" hidden aria-live="polite">
+  <div class="big-icon">📸</div><h2>Chargement des photographies...</h2>
+  <p>PassportQuest contacte Wikimedia Commons pour récupérer les images et leurs crédits.</p>
+</section>
+
+<section class="quiz-layout" id="quizScreen" hidden>
+  <div class="quiz-top">
+    <span class="quiz-label" id="counter">Question 1 / 10</span>
+    <span class="score" id="score">⭐ 0 point</span>
+  </div>
+  <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="quiz-card">
+    <span class="tag" id="category">GÉOGRAPHIE</span>
+    <h2 class="question" id="question">Question...</h2>
+    <div id="photoBlock" hidden>
+      <div class="photo-frame">
+        <img id="quizPhoto" alt="Photographie d'un lieu à identifier">
+        <div id="photoStatus" class="photo-status">Chargement de la photo...</div>
+      </div>
+      <p class="credit" id="photoCredit"></p>
+    </div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback" aria-live="polite" hidden></div>
+    <div class="quiz-actions"><button class="primary" id="nextButton" disabled>Question suivante →</button></div>
+  </div>
+</section>
+
+<section class="center-screen" id="resultScreen" hidden>
+  <div class="big-icon">🏆</div><div class="eyebrow">PARTIE TERMINÉE</div>
+  <h2>Bravo, explorateur !</h2><div id="finalScore" class="final-score">0 / 10</div>
+  <p id="resultMessage"></p>
+  <div class="actions">
+    <button class="primary" id="restartButton">🔄 Rejouer</button>
+    <button class="secondary" id="backHome">Retour à l'accueil</button>
+  </div>
+</section>
+
+<section class="center-screen" id="errorScreen" hidden>
+  <div class="big-icon">📡</div><h2>Les images sont indisponibles</h2>
+  <p>Impossible de joindre Wikimedia Commons ou de récupérer les photographies pour le moment. Vérifie ta connexion et réessaie.</p>
+  <div class="actions">
+    <button class="primary" id="retryButton">Réessayer</button>
+    <button class="secondary" id="errorHome">Retour à l'accueil</button>
+  </div>
+</section>
+<footer>PassportQuest © 2026 — Projet étudiant — Version 4 • Photographies : Wikimedia Commons</footer>
 
 <script>
-let scene, camera, renderer, player, playerLight, environmentGroup = new THREE.Group();
-const keys = { z:false, q:false, s:false, d:false, e:false, space:false };
-let currentStage = 0, npcs = [], interactables = [], activeInteractable = null, isDialogueOpen = false;
-let velocityY = 0, isJumping = false, elapsed = 0, clock = new THREE.Clock();
-const gravity = 18, jumpStrength = 6, playerSpeed = 6, playerHeight = 1.15;
+// PASSPORTQUEST V4 : AFFICHAGE DES PHOTOS AMÉLIORÉ (QUIZ + API INCHANGÉS)
 
-const charArt = [
-"      BBBB      ","    BHHHHHHB    ","   BHH2222HHB   ","  BH22EEEE22HB  ",
-"  BH22EWWV22HB  ","  BH22EVVV22HB  ","   BHH2222HHB   ","   BBCCCCCCBB   ",
-"  B33BCCCCB33B  "," B344BBCCBB443B "," B344BCCCCB443B "," BB33BCCCCB33BB ",
-"  BB B5555B BB  ","     B5555B     ","    B666666B    ","    BBBBBBBB    "];
-const alienPal = {B:'#000',H:'#1a252f',2:'#2ecc71',E:'#000',W:'#e74c3c',V:'#c0392b',C:'#7f8c8d',3:'#34495e',4:'#2c3e50',5:'#95a5a6',6:'#111'};
+const geoQuestions = [
+  {category:"GÉOPOLITIQUE",question:"Dans quelle ville se trouve le siège principal de l'ONU ?",answers:["Genève","New York","Vienne","Bruxelles"],correct:1,explanation:"Le siège principal de l'ONU se trouve à New York, aux États-Unis."},
+  {category:"HISTOIRE",question:"En quelle année l'OTAN a-t-elle été fondée ?",answers:["1919","1945","1949","1991"],correct:2,explanation:"L'Organisation du traité de l'Atlantique nord a été créée en 1949."},
+  {category:"GÉOGRAPHIE",question:"Quelle est la capitale du Canada ?",answers:["Toronto","Montréal","Ottawa","Vancouver"],correct:2,explanation:"Ottawa est la capitale fédérale du Canada."},
+  {category:"GÉOGRAPHIE",question:"Quel canal relie la mer Méditerranée à la mer Rouge ?",answers:["Panama","Suez","Kiel","Corinthe"],correct:1,explanation:"Le canal de Suez, en Égypte, relie ces deux mers."},
+  {category:"HISTOIRE",question:"En quelle année le mur de Berlin est-il tombé ?",answers:["1979","1989","1991","2001"],correct:1,explanation:"Le mur de Berlin est tombé le 9 novembre 1989."},
+  {category:"RELATIONS INTERNATIONALES",question:"Combien de membres permanents siègent au Conseil de sécurité de l'ONU ?",answers:["4","5","6","10"],correct:1,explanation:"Ils sont cinq : Chine, États-Unis, France, Royaume-Uni et Russie."},
+  {category:"GÉOPOLITIQUE",question:"Quelle organisation possède un Parlement élu directement par les citoyens de ses États membres ?",answers:["L'ONU","L'Union européenne","L'OTAN","L'OMC"],correct:1,explanation:"Les citoyens de l'Union européenne élisent directement les députés européens."},
+  {category:"FRONTIÈRES",question:"Avec quel pays la France partage-t-elle une frontière terrestre en Amérique du Sud ?",answers:["Brésil","Chili","Mexique","Colombie"],correct:0,explanation:"La Guyane française partage notamment une frontière avec le Brésil."},
+  {category:"INSTITUTIONS",question:"Dans quelle ville siège la Cour internationale de Justice ?",answers:["Genève","Strasbourg","La Haye","Bruxelles"],correct:2,explanation:"La Cour internationale de Justice siège à La Haye, aux Pays-Bas."},
+  {category:"GÉOGRAPHIE",question:"Quel détroit relie la mer Noire à la mer de Marmara ?",answers:["Gibraltar","Le Bosphore","Malacca","Ormuz"],correct:1,explanation:"Le Bosphore est situé à Istanbul, en Turquie."}
+];
 
-function getPal(hair) { return {B:'#111',H:hair,2:'#FFDAB9',E:'#000',W:'#fff',V:'#aaa',C:'#ecf0f1',3:'#bdc3c7',4:'#95a5a6',5:'#34495e',6:'#111'}; }
+// Chaque fichier a été choisi sur Wikimedia Commons : nom exact + question vérifiée.
+// L'API fournit son URL de miniature, son auteur et sa licence.
+const photoQuestions = [
+  {file:"The Eiffel Tower, Paris 29 June 2015.jpg",answers:["France","Belgique","Italie","Allemagne"],correct:0,explanation:"La tour Eiffel se trouve à Paris, en France."},
+  {file:"Taj Mahal Exterior.jpg",answers:["Pakistan","Inde","Népal","Bangladesh"],correct:1,explanation:"Le Taj Mahal est situé à Agra, en Inde."},
+  {file:"Colosseum - Rome.jpg",answers:["Grèce","Espagne","Italie","Turquie"],correct:2,explanation:"Le Colisée est un amphithéâtre antique de Rome, en Italie."},
+  {file:"Badaling - Great Wall of China.jpg",answers:["Corée du Sud","Japon","Mongolie","Chine"],correct:3,explanation:"Cette photographie montre la Grande Muraille de Chine à Badaling, près de Pékin."},
+  {file:"Christ the Redeemer 1.jpg",answers:["Brésil","Argentine","Chili","Pérou"],correct:0,explanation:"Le Christ Rédempteur surplombe Rio de Janeiro, au Brésil."},
+  {file:"SydneyOpera House.JPG",answers:["Nouvelle-Zélande","Australie","Canada","États-Unis"],correct:1,explanation:"L'opéra de Sydney se trouve en Australie."}
+];
 
-function createTex(art, pal) {
-    const c = document.createElement('canvas'); c.width = 64; c.height = 64; const ctx = c.getContext('2d');
-    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(art[y][x]!==' ') { ctx.fillStyle=pal[art[y][x]]; ctx.fillRect(x*4,y*4,4,4); }
-    const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
+const screens = {
+  home:document.getElementById("homeScreen"),
+  loading:document.getElementById("loadingScreen"),
+  quiz:document.getElementById("quizScreen"),
+  result:document.getElementById("resultScreen"),
+  error:document.getElementById("errorScreen")
+};
+const answersElement=document.getElementById("answers");
+const feedbackElement=document.getElementById("feedback");
+const nextButton=document.getElementById("nextButton");
+const quizPhoto=document.getElementById("quizPhoto");
+let currentMode="geo",gameQuestions=[],questionIndex=0,score=0,answered=false;
+let requestToken=0;
+
+function showScreen(name){
+  Object.entries(screens).forEach(([key,element])=>{element.hidden=key!==name});
+  window.scrollTo(0,0);
+}
+function shuffle(items){
+  const list=[...items];
+  for(let i=list.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [list[i],list[j]]=[list[j],list[i]];
+  }
+  return list;
+}
+function cleanText(html){
+  return new DOMParser().parseFromString(html||"","text/html").body.textContent.trim();
 }
 
-function init() {
-    scene = new THREE.Scene(); scene.add(environmentGroup);
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias:true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
-    document.body.appendChild(renderer.domElement);
+// Appel API Wikimedia Commons : une seule requête pour les 6 fichiers.
+async function loadPhotos(){
+  const params=new URLSearchParams({
+    action:"query",format:"json",formatversion:"2",prop:"imageinfo",
+    iiprop:"url|user|extmetadata",iiurlwidth:"960",
+    titles:photoQuestions.map(q=>"File:"+q.file).join("|"),origin:"*"
+  });
+  const url="https://commons.wikimedia.org/w/api.php?"+params;
+  const response=await fetch(url);
+  if(!response.ok)throw new Error("Erreur HTTP "+response.status);
+  const data=await response.json();
+  if(data.error)throw new Error(data.error.info||"Erreur API");
+  const pages=data.query?.pages||[];
+  const norm=value=>value.toLowerCase().replaceAll("_"," ");
+  const lookup=new Map(pages.map(page=>[norm(page.title),page]));
 
-    player = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(charArt, alienPal) }));
-    player.scale.set(2.2, 2.2, 1); scene.add(player);
-    playerLight = new THREE.PointLight(0x2ecc71, 1.2, 7); scene.add(playerLight);
-
-    window.addEventListener('keydown', e => {
-        let k = e.key.toLowerCase(); if(k===' ') { e.preventDefault(); keys.space=true; }
-        if(keys[k]!==undefined) keys[k]=true;
-        if(k==='e' && !e.repeat) {
-            if(isDialogueOpen) closeDialogue();
-            else if(activeInteractable) {
-                if(activeInteractable.type==='exit') nextStage();
-                if(activeInteractable.type==='npc') openDialogue(activeInteractable.data);
-            }
-        }
-    });
-    window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys[k]!==undefined) keys[k]=false; if(k===' ') keys.space=false; });
-    
-    loadStage(currentStage); animate();
+  return photoQuestions.flatMap(q=>{
+    const page=lookup.get(norm("File:"+q.file));
+    const info=page?.imageinfo?.[0];
+    if(!info?.thumburl&&!info?.url)return [];
+    const meta=info.extmetadata||{};
+    const artist=cleanText(meta.Artist?.value||info.user||"Auteur inconnu").slice(0,110);
+    const license=cleanText(meta.LicenseShortName?.value||"Licence : consulter la source");
+    return [{...q,category:"IMAGES MYSTÈRES",question:"Dans quel pays se trouve ce lieu emblématique ?",
+      imageUrl:info.thumburl||info.url,
+      sourceUrl:info.descriptionurl||"https://commons.wikimedia.org/wiki/"+encodeURIComponent(page.title),
+      artist,license,licenseUrl:meta.LicenseUrl?.value||""}];
+  });
 }
 
-function clearEnv() { environmentGroup.clear(); npcs=[]; interactables=[]; activeInteractable=null; }
-function setUI(name, col, desc) { document.getElementById('level-name').innerText=name; document.getElementById('level-name').style.color=col; document.getElementById('ui-layer').style.borderColor=col; document.getElementById('level-desc').innerText=desc; }
-
-function buildCave() {
-    clearEnv(); scene.background = new THREE.Color(0x020202); scene.fog = new THREE.FogExp2(0x020202, 0.05);
-    environmentGroup.add(new THREE.AmbientLight(0x111122, 1.5));
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }));
-    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; environmentGroup.add(floor);
-    
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(20, 10, 2), new THREE.MeshStandardMaterial({color: 0x0a0a0a}));
-    wall.position.set(0,5,-10); wall.receiveShadow=true; environmentGroup.add(wall);
-
-    // Barreaux et Lumière
-    const winLight = new THREE.SpotLight(0x88bbff, 15, 40, Math.PI/6, 0.2, 1);
-    winLight.position.set(-8, 6, -2); winLight.target.position.set(5, 0, 0); winLight.castShadow=true;
-    environmentGroup.add(winLight); environmentGroup.add(winLight.target);
-    for(let i=0; i<3; i++) {
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 0.2), new THREE.MeshStandardMaterial({color:0x000}));
-        bar.position.set(-6, 5, -2 + i*1.5); bar.castShadow=true; environmentGroup.add(bar);
+async function startQuiz(mode){
+  currentMode=mode;questionIndex=0;score=0;answered=false;
+  const token=++requestToken;
+  if(mode==="photo"){
+    showScreen("loading");
+    try{
+      gameQuestions=shuffle(await loadPhotos());
+      if(token!==requestToken)return;
+      if(gameQuestions.length===0)throw new Error("Aucune image chargée");
+    }catch(error){
+      console.error("Wikimedia Commons :",error);
+      if(token===requestToken)showScreen("error");
+      return;
     }
-    // Sang
-    const blood = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshStandardMaterial({color:0x660000}));
-    blood.rotation.x = -Math.PI/2; blood.position.set(2, 0.02, 0); environmentGroup.add(blood);
+  }else{
+    gameQuestions=shuffle(geoQuestions);
+  }
+  if(token!==requestToken)return;
+  showScreen("quiz");showQuestion();
+}
 
-    // Escaliers
-    for(let i=0; i<6; i++) {
-        const step = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1), new THREE.MeshStandardMaterial({color:0x222}));
-        step.position.set(0, i*0.5+0.25, -6-i*0.5); environmentGroup.add(step);
+function showQuestion(){
+  answered=false;
+  const q=gameQuestions[questionIndex],total=gameQuestions.length;
+  document.getElementById("counter").textContent="Question "+(questionIndex+1)+" / "+total;
+  document.getElementById("score").textContent="⭐ "+score+" point"+(score>1?"s":"");
+  document.getElementById("progressFill").style.width=((questionIndex+1)/total*100)+"%";
+  document.getElementById("category").textContent=q.category;
+  document.getElementById("question").textContent=q.question;
+  feedbackElement.hidden=true;feedbackElement.textContent="";feedbackElement.className="feedback";
+  nextButton.disabled=true;
+  nextButton.textContent=questionIndex===total-1?"Voir mes résultats →":"Question suivante →";
+  answersElement.replaceChildren();
+
+  const isPhoto=currentMode==="photo";
+  document.getElementById("photoBlock").hidden=!isPhoto;
+  q.answers.forEach((answer,index)=>{
+    const button=document.createElement("button");
+    button.className="answer";button.type="button";
+    button.textContent=String.fromCharCode(65+index)+". "+answer;
+    button.disabled=isPhoto;
+    button.addEventListener("click",()=>selectAnswer(index));
+    answersElement.appendChild(button);
+  });
+
+  if(isPhoto){
+    const photoStatus=document.getElementById("photoStatus");
+    const credit=document.getElementById("photoCredit");
+    photoStatus.hidden=false;photoStatus.textContent="Chargement de la photographie...";
+    quizPhoto.removeAttribute("src");
+    credit.replaceChildren();
+    const label=document.createElement("span");
+    label.textContent="Photo : "+q.artist+" · "+q.license+" · ";
+    const source=document.createElement("a");
+    source.href=q.sourceUrl;source.textContent="Source Wikimedia Commons";
+    source.target="_blank";source.rel="noopener noreferrer";
+    credit.append(label);
+    if(q.licenseUrl && /^https:\/\//.test(q.licenseUrl)){
+      const licenseLink=document.createElement("a");
+      licenseLink.href=q.licenseUrl;licenseLink.textContent="Licence";
+      licenseLink.target="_blank";licenseLink.rel="noopener noreferrer";
+      credit.append(licenseLink,document.createTextNode(" · "));
     }
-    const doorTrig = new THREE.Mesh(new THREE.BoxGeometry(3,4,1), new THREE.MeshBasicMaterial({visible:false}));
-    doorTrig.position.set(0,3,-8); environmentGroup.add(doorTrig);
-    interactables.push({ mesh: doorTrig, type: 'exit', hint: "Appuyez sur [E] pour monter discrètement" });
-
-    player.position.set(-3, playerHeight, 5); setUI("1. La Cellule", "#555", "Échappez-vous de la cave.");
+    credit.append(source);
+    const thisQuestion=questionIndex;
+    quizPhoto.onload=()=>{
+      if(currentMode!=="photo"||questionIndex!==thisQuestion||screens.quiz.hidden)return;
+      photoStatus.hidden=true;
+      answersElement.querySelectorAll(".answer").forEach(b=>b.disabled=false);
+    };
+    quizPhoto.onerror=()=>{
+      if(currentMode!=="photo"||questionIndex!==thisQuestion||screens.quiz.hidden)return;
+      photoStatus.hidden=false;
+      photoStatus.textContent="Cette image n'a pas pu être affichée. Tu peux passer à la suivante sans pénalité.";
+      answered=true;
+      nextButton.disabled=false;
+    };
+    quizPhoto.src=q.imageUrl;
+  }
 }
 
-function buildLab() {
-    clearEnv(); scene.background = new THREE.Color(0x0a1015); scene.fog = new THREE.FogExp2(0x0a1015, 0.03);
-    environmentGroup.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x445566 }));
-    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; environmentGroup.add(floor);
-
-    // Bureau et Ordis
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3), new THREE.MeshStandardMaterial({color: 0x222}));
-    desk.position.set(0, 0.75, -2); desk.castShadow=true; desk.receiveShadow=true; environmentGroup.add(desk);
-    const screen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 0.2), new THREE.MeshStandardMaterial({color: 0x111, emissive:0x004488}));
-    screen.position.set(-1, 2, -2); environmentGroup.add(screen);
-    const screen2 = screen.clone(); screen2.position.set(1, 2, -2); environmentGroup.add(screen2);
-
-    spawnNPC("Kelly", "Le sujet vert a l'air instable aujourd'hui.", -2, -4, '#f1c40f');
-    spawnNPC("Jessica", "On fera des prélèvements sanguins demain matin.", 2, -4, '#c0392b');
-
-    const exitDoor = new THREE.Mesh(new THREE.BoxGeometry(4, 5, 0.5), new THREE.MeshStandardMaterial({color: 0x334455}));
-    exitDoor.position.set(0, 2.5, -10); environmentGroup.add(exitDoor);
-    const exitLight = new THREE.PointLight(0x00ff00, 1, 10); exitLight.position.set(0,4,-9); environmentGroup.add(exitLight);
-
-    interactables.push({ mesh: exitDoor, type: 'exit', hint: "Appuyez sur [E] pour fuir dans la rue" });
-    player.position.set(0, playerHeight, 8); setUI("2. Le Laboratoire", "#2980b9", "Contournez les scientifiques sans bruit.");
+function selectAnswer(index){
+  if(answered)return;
+  answered=true;
+  const q=gameQuestions[questionIndex],correct=index===q.correct;
+  if(correct)score++;
+  answersElement.querySelectorAll(".answer").forEach((button,i)=>{
+    button.disabled=true;
+    if(i===q.correct)button.classList.add("correct");
+    else if(i===index)button.classList.add("wrong");
+  });
+  feedbackElement.hidden=false;
+  feedbackElement.className="feedback "+(correct?"success":"error");
+  feedbackElement.textContent=(correct?"✅ Bonne réponse ! ":"❌ Bonne réponse : "+q.answers[q.correct]+". ")+q.explanation;
+  document.getElementById("score").textContent="⭐ "+score+" point"+(score>1?"s":"");
+  nextButton.disabled=false;
 }
 
-function buildStreet() {
-    clearEnv(); scene.background = new THREE.Color(0x050510); scene.fog = new THREE.FogExp2(0x050510, 0.04);
-    environmentGroup.add(new THREE.AmbientLight(0x202040, 0.6));
-
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 100), new THREE.MeshStandardMaterial({ color: 0x111 }));
-    floor.rotation.x = -Math.PI/2; environmentGroup.add(floor);
-
-    // Rue sombre et lampadaires
-    for(let i=0; i<4; i++) {
-        const bldg = new THREE.Mesh(new THREE.BoxGeometry(8, 20, 15), new THREE.MeshStandardMaterial({color:0x0a0a0a}));
-        bldg.position.set(-12, 10, 10 - i*20); environmentGroup.add(bldg);
-        const bldg2 = bldg.clone(); bldg2.position.set(12, 10, 10 - i*20); environmentGroup.add(bldg2);
-
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 5), new THREE.MeshStandardMaterial({color:0x222}));
-        pole.position.set(i%2===0 ? -6 : 6, 2.5, 10 - i*20); environmentGroup.add(pole);
-        const lamp = new THREE.PointLight(0xffaa33, 2, 25); lamp.position.set(pole.position.x, 5, pole.position.z); environmentGroup.add(lamp);
-    }
-
-    // LA SOUCOUPE VOLANTE
-    const ufoGroup = new THREE.Group();
-    const hull = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.5, 1.5, 24), new THREE.MeshStandardMaterial({color: 0x445566, metalness:0.8}));
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshStandardMaterial({color: 0x39ff14, emissive:0x113311, transparent:true, opacity:0.8}));
-    dome.position.y = 1; dome.scale.y = 0.6;
-    const ufoLight = new THREE.PointLight(0x39ff14, 3, 20); ufoLight.position.y = -1;
-    ufoGroup.add(hull, dome, ufoLight);
-    ufoGroup.position.set(0, 1.5, -60);
-    environmentGroup.add(ufoGroup);
-
-    interactables.push({ mesh: hull, type: 'exit', hint: "Appuyez sur [E] pour décoller vers Mars !" });
-    player.position.set(0, playerHeight, 25); setUI("3. La Rue", "#8e44ad", "Courez jusqu'à votre soucoupe volante.");
+function nextQuestion(){
+  if(!answered)return;
+  questionIndex++;
+  if(questionIndex<gameQuestions.length)showQuestion();else showResults();
 }
-
-function buildMarsEnd() {
-    clearEnv(); scene.background = new THREE.Color(0x9c5038); scene.fog = new THREE.Fog(0x9c5038, 10, 50);
-    environmentGroup.add(new THREE.AmbientLight(0xffc2a0, 1));
-    const sun = new THREE.DirectionalLight(0xff9363, 2); sun.position.set(-20,30,-20); environmentGroup.add(sun);
-    
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x9a4930 }));
-    floor.rotation.x = -Math.PI/2; environmentGroup.add(floor);
-    
-    const ufo = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.5, 1.5, 24), new THREE.MeshStandardMaterial({color: 0x445566}));
-    ufo.position.set(5, 0.75, -5); environmentGroup.add(ufo);
-
-    player.position.set(0, playerHeight, 5); setUI("4. Mars - Victoire", "#e67e22", "Évasion réussie. Vous êtes sauf !");
+function showResults(){
+  showScreen("result");
+  const total=gameQuestions.length;
+  document.getElementById("finalScore").textContent=score+" / "+total;
+  document.getElementById("resultMessage").textContent=
+    score===total?"🌟 Score parfait ! Tu connais vraiment bien le monde !":
+    score/total>=.7?"🌍 Très belle performance ! Tu maîtrises déjà beaucoup de sujets.":
+    score/total>=.4?"👏 Bien joué ! Tu as de bonnes bases. Continue à explorer.":
+    "🚀 Chaque question est l'occasion d'apprendre. Réessaie pour progresser !";
 }
+function goHome(){requestToken++;showScreen("home")}
+function goModes(){goHome();document.getElementById("modes").scrollIntoView({behavior:"smooth"})}
 
-function spawnNPC(name, text, x, z, hair) {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:createTex(charArt, getPal(hair)) }));
-    s.scale.set(2.2, 2.2, 1); s.position.set(x, playerHeight, z); environmentGroup.add(s);
-    npcs.push({ mesh:s, name:name, text:text });
-}
-
-function loadStage(idx) { if(idx===0) buildCave(); else if(idx===1) buildLab(); else if(idx===2) buildStreet(); else buildMarsEnd(); }
-
-function nextStage() {
-    const s = document.getElementById('fade-screen'); s.style.opacity = '1';
-    setTimeout(() => { currentStage++; loadStage(currentStage); s.style.opacity = '0'; }, 1000);
-}
-
-function openDialogue(data) {
-    isDialogueOpen=true; document.getElementById('dialogue-name').innerText=data.name;
-    document.getElementById('dialogue-text').innerText=data.text; document.getElementById('dialogue-box').style.display='block';
-    document.getElementById('interaction-hint').style.display='none';
-}
-function closeDialogue() { isDialogueOpen=false; document.getElementById('dialogue-box').style.display='none'; }
-
-function animate() {
-    requestAnimationFrame(animate);
-    const delta = Math.min(clock.getDelta(), 0.04); elapsed += delta;
-
-    if(!isDialogueOpen) {
-        let dx=0, dz=0;
-        if(keys.z) dz-=1; if(keys.s) dz+=1; if(keys.q) dx-=1; if(keys.d) dx+=1;
-        const moving = (dx!==0 || dz!==0);
-        if(moving) { let len=Math.sqrt(dx*dx+dz*dz); player.position.x += (dx/len)*playerSpeed*delta; player.position.z += (dz/len)*playerSpeed*delta; }
-
-        if(keys.space && !isJumping) { velocityY = jumpStrength; isJumping = true; }
-        if(isJumping) {
-            player.position.y += velocityY * delta; velocityY -= gravity * delta;
-            if(player.position.y <= playerHeight) { player.position.y = playerHeight; velocityY = 0; isJumping = false; }
-        } else player.position.y = playerHeight + (moving ? Math.abs(Math.sin(elapsed*12))*.15 : 0);
-        
-        playerLight.position.copy(player.position);
-
-        let closest = 3; activeInteractable = null;
-        interactables.forEach(i => { if(player.position.distanceTo(i.mesh.position) < closest) { closest=player.position.distanceTo(i.mesh.position); activeInteractable={type:i.type, hint:i.hint}; } });
-        npcs.forEach(n => { if(player.position.distanceTo(n.mesh.position) < closest) { closest=player.position.distanceTo(n.mesh.position); activeInteractable={type:'npc', data:n, hint:`Appuyez sur [E] pour écouter ${n.name}`}; } });
-        
-        const hint = document.getElementById('interaction-hint');
-        if(activeInteractable) { hint.innerText=activeInteractable.hint; hint.style.display='block'; } else hint.style.display='none';
-    }
-
-    camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y+5, player.position.z+9), 0.1);
-    camera.lookAt(player.position.x, player.position.y, player.position.z);
-    renderer.render(scene, camera);
-}
-init();
+document.getElementById("headerHome").addEventListener("click",goHome);
+document.getElementById("navHome").addEventListener("click",goHome);
+document.getElementById("navModes").addEventListener("click",goModes);
+document.getElementById("heroStart").addEventListener("click",goModes);
+document.getElementById("geoStart").addEventListener("click",()=>startQuiz("geo"));
+document.getElementById("photoStart").addEventListener("click",()=>startQuiz("photo"));
+document.getElementById("retryButton").addEventListener("click",()=>startQuiz("photo"));
+document.getElementById("errorHome").addEventListener("click",goHome);
+document.getElementById("restartButton").addEventListener("click",()=>startQuiz(currentMode));
+document.getElementById("backHome").addEventListener("click",goHome);
+nextButton.addEventListener("click",nextQuestion);
 </script>
 </body>
 </html>
+
+
+
+
