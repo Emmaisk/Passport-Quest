@@ -1,228 +1,1105 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploration Spatiale - Mission Mars</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        /* --- MENU D'ACCUEIL --- */
-        #hub-screen {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; z-index: 100; transition: opacity 1s;
-        }
-        #hub-screen h1 { font-size: 4rem; margin-bottom: 10px; text-shadow: 0 0 20px #e06666; }
-        #hub-screen p { font-size: 1.2rem; margin-bottom: 30px; color: #aaa; }
-        .btn-start {
-            padding: 15px 40px; font-size: 1.5rem; font-weight: bold; color: white;
-            background: linear-gradient(45deg, #d32f2f, #f44336); border: none; border-radius: 30px;
-            cursor: pointer; box-shadow: 0 8px 15px rgba(244, 67, 54, 0.4); transition: transform 0.2s;
-        }
-        .btn-start:hover { transform: scale(1.05); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PassportQuest — Version 2</title>
 
-        /* --- INTERFACE EN JEU --- */
-        #ui-layer {
-            position: absolute; top: 20px; left: 20px; color: white; display: none;
-            background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 8px;
-            border-left: 4px solid #f44336; z-index: 10;
-        }
-        
-        /* --- BULLE DE DIALOGUE --- */
-        #dialogue-box {
-            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9); color: black; padding: 20px;
-            border-radius: 10px; font-size: 1.2rem; font-weight: bold; display: none;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 20; text-align: center;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --bg: #071023;
+  --card: #142442;
+  --blue: #70bdff;
+  --purple: #b7a2ff;
+  --white: #f5f8ff;
+  --muted: #a4b5d0;
+  --border: rgba(255,255,255,.13);
+  --green: #57d7a0;
+  --red: #ff8195;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background:
+    radial-gradient(ellipse at 75% 15%, #14365d, transparent 45%),
+    radial-gradient(ellipse at 10% 85%, #152550, transparent 45%),
+    var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+}
+
+button { font: inherit; cursor: pointer; }
+
+button:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+[hidden] { display: none !important; }
+
+/* NAVIGATION */
+
+header {
+  max-width: 1200px;
+  margin: auto;
+  padding: 26px 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.logo {
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 800;
+  color: white;
+  font-size: 25px;
+  letter-spacing: -.7px;
+}
+
+.logo span { color: var(--blue); }
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+nav button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+nav button:hover { color: white; }
+
+.version {
+  color: #a5d9ff;
+  border: 1px solid #79caff55;
+  background: #79caff14;
+  border-radius: 30px;
+  padding: 9px 15px;
+  font-size: 12px;
+}
+
+/* ACCUEIL */
+
+.hero {
+  max-width: 1200px;
+  min-height: 500px;
+  margin: auto;
+  padding: 65px 25px;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  align-items: center;
+  gap: 35px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  color: #9cd9ff;
+  letter-spacing: 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: clamp(40px,5vw,65px);
+  line-height: 1.14;
+  letter-spacing: -1.5px;
+  margin: 24px 0;
+}
+
+.gradient {
+  background: linear-gradient(90deg,#72c7ff,#b6a2ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.8;
+  max-width: 540px;
+}
+
+.primary {
+  border: none;
+  padding: 16px 27px;
+  color: #08162d;
+  background: linear-gradient(120deg,#76ceff,#83aaff);
+  border-radius: 13px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px #459fff35;
+}
+
+.primary:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.hero .primary { margin-top: 22px; }
+
+.globe-area {
+  position: relative;
+  min-height: 390px;
+  display: grid;
+  place-items: center;
+}
+
+.globe-area::before {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  background: #228fff;
+  filter: blur(90px);
+  opacity: .25;
+  border-radius: 50%;
+}
+
+.orbit {
+  position: absolute;
+  width: 390px;
+  height: 265px;
+  border: 1px solid #8dc8ff44;
+  border-radius: 50%;
+  transform: rotate(-25deg);
+}
+
+.earth {
+  position: relative;
+  font-size: 220px;
+  filter: drop-shadow(0 0 30px #318fff77);
+  animation: float 5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.floating {
+  position: absolute;
+  background: #102341eb;
+  border: 1px solid #79bfff50;
+  border-radius: 13px;
+  padding: 13px 17px;
+  font-size: 13px;
+  color: #9bd7ff;
+}
+
+.floating.one {
+  left: 2%;
+  top: 65px;
+}
+
+.floating.two {
+  right: 0;
+  bottom: 55px;
+}
+
+/* CATEGORIES */
+
+.section {
+  max-width: 1200px;
+  margin: auto;
+  padding: 40px 25px 85px;
+}
+
+.section h2 {
+  font-size: 34px;
+  margin: 12px 0;
+}
+
+.subtitle {
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 20px;
+}
+
+.mode {
+  background: linear-gradient(145deg,#1b3052,#101b32);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 27px;
+  min-height: 285px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mode.featured {
+  border-color: #79c7ff99;
+}
+
+.mode-icon {
+  background: #81bfff1a;
+  width: 65px;
+  height: 65px;
+  display: grid;
+  place-items: center;
+  font-size: 36px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+}
+
+.mode h3 {
+  font-size: 21px;
+  margin: 0 0 10px;
+}
+
+.mode p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  flex: 1;
+}
+
+.mode .primary {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.soon {
+  color: #9bd4ff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 15px;
+}
+
+/* QUIZ */
+
+.quiz-layout {
+  max-width: 900px;
+  margin: 40px auto 100px;
+  padding: 0 22px;
+}
+
+.quiz-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.quiz-label {
+  color: #a4d9ff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.score {
+  border: 1px solid #8bbfff55;
+  background: #81bfff14;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  color: #b2e1ff;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 30px;
+  overflow: hidden;
+  background: #223453;
+  margin-bottom: 28px;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg,#60c9ff,#b6a0ff);
+  border-radius: 30px;
+  transition: width .35s;
+}
+
+.quiz-card {
+  background: linear-gradient(145deg,#192f52,#101c36);
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  padding: 38px;
+  box-shadow: 0 25px 70px #0003;
+}
+
+.category {
+  display: inline-block;
+  background: #7abfff1a;
+  color: #9bd7ff;
+  border: 1px solid #7abfff44;
+  border-radius: 30px;
+  padding: 9px 15px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.question {
+  font-size: clamp(24px,3.5vw,33px);
+  line-height: 1.4;
+  margin: 30px 0;
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 14px;
+}
+
+.answer {
+  text-align: left;
+  background: #0f203c;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  padding: 19px;
+  color: white;
+  min-height: 74px;
+  font-weight: 600;
+  transition: .2s;
+}
+
+.answer:not(:disabled):hover {
+  background: #22426c;
+  border-color: #7abfff;
+  transform: translateY(-2px);
+}
+
+.answer:disabled {
+  cursor: default;
+}
+
+.answer.correct {
+  background: #123f37;
+  border-color: var(--green);
+  color: #a3f6d4;
+}
+
+.answer.wrong {
+  background: #4a2435;
+  border-color: var(--red);
+  color: #ffd2db;
+}
+
+.feedback {
+  margin-top: 25px;
+  padding: 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.feedback.success {
+  border: 1px solid #57d7a077;
+  background: #57d7a012;
+}
+
+.feedback.error {
+  border: 1px solid #ff819577;
+  background: #ff819510;
+}
+
+.quiz-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 26px;
+}
+
+/* RESULTATS */
+
+.result-card {
+  max-width: 680px;
+  margin: 70px auto 110px;
+  padding: 50px 35px;
+  text-align: center;
+  background: linear-gradient(150deg,#1b345b,#101b35);
+  border: 1px solid #ffffff25;
+  border-radius: 28px;
+}
+
+.trophy {
+  font-size: 75px;
+  margin-bottom: 20px;
+}
+
+.result-card h2 {
+  font-size: 38px;
+  margin: 12px 0;
+}
+
+.final-score {
+  font-size: 70px;
+  font-weight: 800;
+  color: #82caff;
+  margin: 22px 0;
+}
+
+.result-card p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.result-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.secondary {
+  background: #ffffff12;
+  color: white;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 16px 24px;
+  font-weight: 700;
+}
+
+footer {
+  text-align: center;
+  padding: 25px;
+  color: var(--muted);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* MOBILE */
+
+@media(max-width:850px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding-top: 35px;
+  }
+
+  .hero p { margin: auto; }
+
+  .globe-area { min-height: 300px; }
+
+  .earth { font-size: 170px; }
+
+  .orbit {
+    width: 300px;
+    height: 210px;
+  }
+
+  .modes { grid-template-columns: 1fr; }
+
+  .mode { min-height: auto; }
+
+  .answers { grid-template-columns: 1fr; }
+}
+
+@media(max-width:550px) {
+  header { padding: 20px 16px; }
+
+  .logo { font-size: 19px; }
+
+  nav { gap: 12px; }
+
+  nav button { font-size: 12px; }
+
+  .version { display: none; }
+
+  .quiz-card { padding: 23px; }
+
+  .question { font-size: 24px; }
+
+  .result-card { margin: 35px 15px; }
+
+  .floating { font-size: 11px; }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
 </head>
+
 <body>
 
-    <!-- Écran d'accueil -->
-    <div id="hub-screen">
-        <h1>STATION ORBITALE</h1>
-        <p>Sélectionnez votre prochaine destination</p>
-        <button class="btn-start" onclick="startGame()">Atterrir sur Mars</button>
+<!-- NAVIGATION -->
+<header>
+  <button class="logo" id="headerHome">
+    🌍 Passport<span>Quest</span>
+  </button>
+
+  <nav>
+    <button id="navHome">Accueil</button>
+    <button id="navModes">Les modes</button>
+  </nav>
+
+  <div class="version">VERSION 2.0</div>
+</header>
+
+<!-- PAGE D'ACCUEIL -->
+<div id="homeScreen">
+
+  <main class="hero">
+
+    <div>
+      <div class="eyebrow">
+        ✦ LE MONDE T'ATTEND
+      </div>
+
+      <h1>
+        Explore le monde.<br>
+        <span class="gradient">
+          Défie tes connaissances.
+        </span>
+      </h1>
+
+      <p>
+        Des lieux emblématiques aux grands
+        événements géopolitiques, explore notre planète
+        autrement et teste tes connaissances.
+      </p>
+
+      <button class="primary" id="heroStart">
+        Commencer le quiz →
+      </button>
     </div>
 
-    <!-- Interface en jeu -->
-    <div id="ui-layer">
-        <h2 style="margin:0 0 10px 0;">Mars</h2>
-        <p style="margin:0; font-size:14px;">Trouvez la forme de vie locale.</p>
-        <p style="margin:10px 0 0 0; font-size:12px; color:#ccc;">Déplacement : Z Q S D</p>
+    <div class="globe-area">
+      <div class="orbit"></div>
+      <div class="earth">🌎</div>
+
+      <div class="floating one">
+        🌐 Géographie & géopolitique
+      </div>
+
+      <div class="floating two">
+        ⭐ 10 questions par partie
+      </div>
     </div>
 
-    <!-- Dialogue PNJ -->
-    <div id="dialogue-box">Salutations, voyageur ! Que fais-tu sur mon territoire de sable ?</div>
+  </main>
 
-    <script>
-        let scene, camera, renderer, player, alien;
-        let gameActive = false;
-        
-        // --- CONTRÔLES AZERTY ---
-        const keys = { z: false, q: false, s: false, d: false };
-        const speed = 0.15;
-        
-        window.addEventListener('keydown', (e) => { 
-            const key = e.key.toLowerCase();
-            if (keys.hasOwnProperty(key)) keys[key] = true; 
-        });
-        window.addEventListener('keyup', (e) => { 
-            const key = e.key.toLowerCase();
-            if (keys.hasOwnProperty(key)) keys[key] = false; 
-        });
+  <!-- MODES -->
+  <section class="section" id="modes">
 
-        function initGame() {
-            // 1. SCÈNE & CAMÉRA
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x3d1c13); 
-            scene.fog = new THREE.FogExp2(0x3d1c13, 0.03); // Brouillard dense
+    <div class="eyebrow">À TOI DE JOUER</div>
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true; // Activer les ombres
-            document.body.appendChild(renderer.domElement);
+    <h2>Choisis ton défi</h2>
 
-            // 2. LUMIÈRES (Soleil rasant pour l'effet HD-2D)
-            const ambientLight = new THREE.AmbientLight(0xffccaa, 0.4);
-            scene.add(ambientLight);
-            
-            const sunLight = new THREE.DirectionalLight(0xff6600, 1.5);
-            sunLight.position.set(-20, 15, -20);
-            sunLight.castShadow = true;
-            sunLight.shadow.camera.left = -30; sunLight.shadow.camera.right = 30;
-            sunLight.shadow.camera.top = 30; sunLight.shadow.camera.bottom = -30;
-            scene.add(sunLight);
+    <p class="subtitle">
+      Plusieurs expériences pour apprendre
+      tout en s'amusant.
+    </p>
 
-            // 3. DÉCORS (Dunes générées mathématiquement)
-            const groundGeo = new THREE.PlaneGeometry(150, 150, 60, 60);
-            const pos = groundGeo.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-                const x = pos.getX(i);
-                const y = pos.getY(i);
-                // Création de collines et vallées avec sin/cos
-                let z = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 2; 
-                pos.setZ(i, z);
-            }
-            groundGeo.computeVertexNormals();
-            
-            const groundMat = new THREE.MeshStandardMaterial({ color: 0x933b22, roughness: 0.9, flatShading: true });
-            const ground = new THREE.Mesh(groundGeo, groundMat);
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            scene.add(ground);
+    <div class="modes">
 
-            // Particules (Poussière martienne)
-            const particleGeo = new THREE.BufferGeometry();
-            const particleCount = 500;
-            const particlePos = new Float32Array(particleCount * 3);
-            for(let i=0; i<particleCount*3; i++) {
-                particlePos[i] = (Math.random() - 0.5) * 100;
-            }
-            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-            const particleMat = new THREE.PointsMaterial({ color: 0xffaa55, size: 0.2, transparent: true, opacity: 0.6 });
-            const particles = new THREE.Points(particleGeo, particleMat);
-            scene.add(particles);
+      <article class="mode featured">
+        <div class="mode-icon">🌍</div>
 
-            // 4. LE JOUEUR (Astronaute 2D)
-            const playerCanvas = document.createElement('canvas');
-            playerCanvas.width = 64; playerCanvas.height = 64;
-            const pCtx = playerCanvas.getContext('2d');
-            pCtx.fillStyle = 'white'; pCtx.fillRect(16, 20, 32, 40); // Corps
-            pCtx.fillStyle = '#ddd'; pCtx.fillRect(12, 4, 40, 32); // Casque
-            pCtx.fillStyle = '#0cf'; pCtx.fillRect(20, 12, 24, 16); // Visière
-            
-            const playerTex = new THREE.CanvasTexture(playerCanvas);
-            playerTex.magFilter = THREE.NearestFilter;
-            player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTex }));
-            player.scale.set(2, 2, 1);
-            player.position.set(0, 1.5, 0);
-            scene.add(player);
+        <h3>Quiz du monde</h3>
 
-            // 5. L'EXTRATERRESTRE (PNJ)
-            const alienCanvas = document.createElement('canvas');
-            alienCanvas.width = 64; alienCanvas.height = 64;
-            const aCtx = alienCanvas.getContext('2d');
-            aCtx.fillStyle = '#4CAF50'; aCtx.fillRect(16, 24, 32, 36); // Corps vert
-            aCtx.fillRect(20, 8, 24, 16); // Tête
-            aCtx.fillStyle = 'black'; aCtx.fillRect(24, 12, 4, 4); aCtx.fillRect(36, 12, 4, 4); // Yeux
-            aCtx.fillStyle = '#4CAF50'; aCtx.fillRect(12, 0, 4, 10); aCtx.fillRect(48, 0, 4, 10); // Antennes
-            
-            const alienTex = new THREE.CanvasTexture(alienCanvas);
-            alienTex.magFilter = THREE.NearestFilter;
-            alien = new THREE.Sprite(new THREE.SpriteMaterial({ map: alienTex }));
-            alien.scale.set(1.8, 1.8, 1);
-            alien.position.set(10, 1.5, -15); // Placé plus loin
-            scene.add(alien);
+        <p>
+          Réponds à 10 questions sur les pays,
+          les capitales, l'histoire et les
+          relations internationales.
+        </p>
 
-            // Lancement de la boucle
-            gameActive = true;
-            animate();
-        }
+        <button class="primary" id="modeStart">
+          Jouer maintenant →
+        </button>
+      </article>
 
-        function startGame() {
-            document.getElementById('hub-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('hub-screen').style.display = 'none';
-                document.getElementById('ui-layer').style.display = 'block';
-                initGame();
-            }, 1000);
-        }
+      <article class="mode">
+        <div class="mode-icon">📸</div>
 
-        // 6. BOUCLE D'ANIMATION ET LOGIQUE
-        const cameraOffset = new THREE.Vector3(0, 5, 10);
+        <h3>Images mystères</h3>
 
-        function animate() {
-            if (!gameActive) return;
-            requestAnimationFrame(animate);
+        <p>
+          Observe des photographies emblématiques
+          et devine le pays ou le lieu représenté.
+        </p>
 
-            // Déplacement (AZERTY)
-            if (keys.z) player.position.z -= speed;
-            if (keys.s) player.position.z += speed;
-            if (keys.q) player.position.x -= speed;
-            if (keys.d) player.position.x += speed;
+        <span class="soon">
+          🔒 Disponible dans la V3
+        </span>
+      </article>
 
-            // Ajustement de la hauteur du joueur selon les dunes
-            const playerGroundY = Math.sin(player.position.x * 0.1) * Math.cos(player.position.z * 0.1) * 2;
-            player.position.y = playerGroundY + 1.5;
+      <article class="mode">
+        <div class="mode-icon">🧩</div>
 
-            // Ajustement hauteur PNJ
-            const alienGroundY = Math.sin(alien.position.x * 0.1) * Math.cos(alien.position.z * 0.1) * 2;
-            alien.position.y = alienGroundY + 1.5;
+        <h3>Pays mystère</h3>
 
-            // Interaction PNJ
-            const distance = player.position.distanceTo(alien.position);
-            const dialogue = document.getElementById('dialogue-box');
-            if (distance < 5) {
-                dialogue.style.display = 'block';
-            } else {
-                dialogue.style.display = 'none';
-            }
+        <p>
+          Découvre un pays à partir d'indices
+          sur sa géographie, son histoire
+          et sa culture.
+        </p>
 
-            // Suivi de caméra fluide
-            camera.position.lerp(new THREE.Vector3(
-                player.position.x + cameraOffset.x,
-                player.position.y + cameraOffset.y,
-                player.position.z + cameraOffset.z
-            ), 0.1);
-            camera.lookAt(player.position);
+        <span class="soon">
+          🔒 Prochaine version
+        </span>
+      </article>
 
-            renderer.render(scene, camera);
-        }
+    </div>
+  </section>
+</div>
 
-        window.addEventListener('resize', () => {
-            if(camera && renderer) {
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-            }
-        });
-    </script>
+<!-- ECRAN DU QUIZ -->
+<section class="quiz-layout" id="quizScreen" hidden>
+
+  <div class="quiz-top">
+    <div class="quiz-label" id="counter">
+      Question 1 / 10
+    </div>
+
+    <div class="score" id="score">
+      ⭐ 0 point
+    </div>
+  </div>
+
+  <div class="progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="quiz-card">
+
+    <span class="category" id="category">
+      GÉOGRAPHIE
+    </span>
+
+    <h2 class="question" id="question">
+      Chargement de la question...
+    </h2>
+
+    <div class="answers" id="answers">
+    </div>
+
+    <div class="feedback" id="feedback"
+         aria-live="polite" hidden>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="primary" id="nextButton" disabled>
+        Question suivante →
+      </button>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ECRAN DES RESULTATS -->
+<section id="resultScreen" hidden>
+
+  <div class="result-card">
+
+    <div class="trophy">🏆</div>
+
+    <div class="eyebrow">
+      MISSION TERMINÉE
+    </div>
+
+    <h2>Bravo, explorateur !</h2>
+
+    <div class="final-score" id="finalScore">
+      0 / 10
+    </div>
+
+    <p id="resultMessage"></p>
+
+    <div class="result-actions">
+      <button class="primary" id="restartButton">
+        🔄 Rejouer
+      </button>
+
+      <button class="secondary" id="backHome">
+        Retour à l'accueil
+      </button>
+    </div>
+
+  </div>
+
+</section>
+
+<footer>
+  PassportQuest © 2026 —
+  Projet étudiant — Version 2
+</footer>
+
+<script>
+// ==========================================
+// PASSPORTQUEST - VERSION 2
+// PREMIER QUIZ FONCTIONNEL
+// ==========================================
+
+// 1. BASE DE QUESTIONS
+
+const questions = [
+  {
+    category: "GÉOPOLITIQUE",
+    question: "Dans quelle ville se trouve le siège principal de l'ONU ?",
+    answers: ["Genève", "New York", "Vienne", "Bruxelles"],
+    correct: 1,
+    explanation:
+      "Le siège principal de l'Organisation des Nations unies " +
+      "se trouve à New York, aux États-Unis."
+  },
+  {
+    category: "HISTOIRE",
+    question: "En quelle année l'OTAN a-t-elle été fondée ?",
+    answers: ["1919", "1945", "1949", "1991"],
+    correct: 2,
+    explanation:
+      "L'Organisation du traité de l'Atlantique nord " +
+      "a été créée en 1949, au début de la guerre froide."
+  },
+  {
+    category: "GÉOGRAPHIE",
+    question: "Quelle est la capitale du Canada ?",
+    answers: ["Toronto", "Montréal", "Ottawa", "Vancouver"],
+    correct: 2,
+    explanation:
+      "Ottawa est la capitale fédérale du Canada. " +
+      "Toronto et Montréal sont d'autres grandes villes canadiennes."
+  },
+  {
+    category: "GÉOGRAPHIE",
+    question: "Quel canal relie la mer Méditerranée à la mer Rouge ?",
+    answers: [
+      "Le canal de Panama",
+      "Le canal de Suez",
+      "Le canal de Kiel",
+      "Le canal de Corinthe"
+    ],
+    correct: 1,
+    explanation:
+      "Le canal de Suez se situe en Égypte. " +
+      "Il constitue une voie importante pour le commerce maritime."
+  },
+  {
+    category: "HISTOIRE",
+    question: "En quelle année le mur de Berlin est-il tombé ?",
+    answers: ["1979", "1989", "1991", "2001"],
+    correct: 1,
+    explanation:
+      "Le mur de Berlin est tombé le 9 novembre 1989. " +
+      "Cet événement a marqué la fin de la division de Berlin."
+  },
+  {
+    category: "RELATIONS INTERNATIONALES",
+    question: "Combien de membres permanents siègent au Conseil de sécurité de l'ONU ?",
+    answers: ["4", "5", "6", "10"],
+    correct: 1,
+    explanation:
+      "Il existe cinq membres permanents : la Chine, " +
+      "les États-Unis, la France, le Royaume-Uni et la Russie."
+  },
+  {
+    category: "GÉOPOLITIQUE",
+    question: "Quelle organisation possède un Parlement élu directement par les citoyens de ses États membres ?",
+    answers: ["L'ONU", "L'Union européenne", "L'OTAN", "L'OMC"],
+    correct: 1,
+    explanation:
+      "Les citoyens de l'Union européenne élisent directement " +
+      "les députés du Parlement européen."
+  },
+  {
+    category: "FRONTIÈRES",
+    question: "Avec quel pays la France partage-t-elle une frontière terrestre en Amérique du Sud ?",
+    answers: ["Le Brésil", "Le Chili", "Le Mexique", "La Colombie"],
+    correct: 0,
+    explanation:
+      "La Guyane française, située en Amérique du Sud, " +
+      "partage une frontière terrestre avec le Brésil."
+  },
+  {
+    category: "INSTITUTIONS",
+    question: "Dans quelle ville siège la Cour internationale de Justice ?",
+    answers: ["Genève", "Strasbourg", "La Haye", "Bruxelles"],
+    correct: 2,
+    explanation:
+      "La Cour internationale de Justice siège à La Haye, " +
+      "aux Pays-Bas. Elle est l'organe judiciaire principal de l'ONU."
+  },
+  {
+    category: "GÉOGRAPHIE",
+    question: "Quel détroit relie la mer Noire à la mer de Marmara ?",
+    answers: [
+      "Gibraltar",
+      "Le Bosphore",
+      "Malacca",
+      "Ormuz"
+    ],
+    correct: 1,
+    explanation:
+      "Le Bosphore se trouve en Turquie, à Istanbul. " +
+      "Il relie la mer Noire à la mer de Marmara."
+  }
+];
+
+// 2. VARIABLES DU JEU
+
+let gameQuestions = [];
+let currentQuestion = 0;
+let score = 0;
+let answered = false;
+
+// 3. ELEMENTS HTML
+
+const homeScreen = document.getElementById("homeScreen");
+const quizScreen = document.getElementById("quizScreen");
+const resultScreen = document.getElementById("resultScreen");
+
+const questionElement = document.getElementById("question");
+const answersElement = document.getElementById("answers");
+const feedbackElement = document.getElementById("feedback");
+const nextButton = document.getElementById("nextButton");
+
+// 4. CHANGER D'ECRAN
+
+function showScreen(screen) {
+  homeScreen.hidden = screen !== "home";
+  quizScreen.hidden = screen !== "quiz";
+  resultScreen.hidden = screen !== "result";
+
+  window.scrollTo(0, 0);
+}
+
+// 5. MELANGER LES QUESTIONS
+
+function shuffleQuestions(array) {
+  const copy = [...array];
+
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
+
+// 6. DEMARRER UNE PARTIE
+
+function startQuiz() {
+  gameQuestions = shuffleQuestions(questions);
+  currentQuestion = 0;
+  score = 0;
+
+  showScreen("quiz");
+  showQuestion();
+}
+
+// 7. AFFICHER UNE QUESTION
+
+function showQuestion() {
+  answered = false;
+
+  const q = gameQuestions[currentQuestion];
+  const total = gameQuestions.length;
+
+  document.getElementById("counter").textContent =
+    "Question " + (currentQuestion + 1) + " / " + total;
+
+  document.getElementById("score").textContent =
+    "⭐ " + score + " point" + (score > 1 ? "s" : "");
+
+  document.getElementById("category").textContent =
+    q.category;
+
+  questionElement.textContent = q.question;
+
+  document.getElementById("progressFill").style.width =
+    ((currentQuestion + 1) / total * 100) + "%";
+
+  answersElement.innerHTML = "";
+
+  feedbackElement.hidden = true;
+  feedbackElement.textContent = "";
+  feedbackElement.className = "feedback";
+
+  nextButton.disabled = true;
+
+  nextButton.textContent =
+    currentQuestion === total - 1
+      ? "Voir mes résultats →"
+      : "Question suivante →";
+
+  // Créer les quatre boutons de réponse
+  q.answers.forEach((answer, index) => {
+    const button = document.createElement("button");
+
+    button.className = "answer";
+    button.type = "button";
+
+    button.textContent =
+      String.fromCharCode(65 + index) + ". " + answer;
+
+    button.addEventListener("click", () => {
+      selectAnswer(index);
+    });
+
+    answersElement.appendChild(button);
+  });
+}
+
+// 8. VERIFIER LA REPONSE
+
+function selectAnswer(selectedIndex) {
+  // Empêcher de répondre plusieurs fois
+  if (answered) return;
+
+  answered = true;
+
+  const q = gameQuestions[currentQuestion];
+  const isCorrect = selectedIndex === q.correct;
+
+  if (isCorrect) {
+    score++;
+  }
+
+  // Colorer les réponses
+  const buttons = answersElement.querySelectorAll(".answer");
+
+  buttons.forEach((button, index) => {
+    button.disabled = true;
+
+    if (index === q.correct) {
+      button.classList.add("correct");
+    } else if (index === selectedIndex) {
+      button.classList.add("wrong");
+    }
+  });
+
+  // Afficher une explication
+  if (isCorrect) {
+    feedbackElement.className = "feedback success";
+
+    feedbackElement.textContent =
+      "✅ Bonne réponse ! " + q.explanation;
+  } else {
+    feedbackElement.className = "feedback error";
+
+    feedbackElement.textContent =
+      "❌ Pas tout à fait ! La bonne réponse était : " +
+      q.answers[q.correct] + ". " + q.explanation;
+  }
+
+  feedbackElement.hidden = false;
+
+  document.getElementById("score").textContent =
+    "⭐ " + score + " point" + (score > 1 ? "s" : "");
+
+  nextButton.disabled = false;
+}
+
+// 9. PASSER A LA QUESTION SUIVANTE
+
+function nextQuestion() {
+  if (!answered) return;
+
+  currentQuestion++;
+
+  if (currentQuestion < gameQuestions.length) {
+    showQuestion();
+  } else {
+    showResults();
+  }
+}
+
+// 10. AFFICHER LES RESULTATS
+
+function showResults() {
+  showScreen("result");
+
+  const total = gameQuestions.length;
+
+  document.getElementById("finalScore").textContent =
+    score + " / " + total;
+
+  const message = document.getElementById("resultMessage");
+
+  if (score === total) {
+    message.textContent =
+      "🌟 Score parfait ! Tu connais vraiment bien le monde !";
+  } else if (score >= 7) {
+    message.textContent =
+      "🌍 Très belle performance ! Tu maîtrises déjà " +
+      "de nombreux sujets géographiques et géopolitiques.";
+  } else if (score >= 4) {
+    message.textContent =
+      "👏 Bien joué ! Tu as de bonnes bases. " +
+      "Continue à explorer pour progresser.";
+  } else {
+    message.textContent =
+      "🚀 Chaque exploration permet d'apprendre ! " +
+      "Retente ta chance pour améliorer ton score.";
+  }
+}
+
+// 11. RETOUR A L'ACCUEIL
+
+function goHome() {
+  showScreen("home");
+}
+
+function goModes() {
+  showScreen("home");
+
+  document.getElementById("modes").scrollIntoView({
+    behavior: "smooth"
+  });
+}
+
+// 12. EVENEMENTS DES BOUTONS
+
+document.getElementById("heroStart")
+  .addEventListener("click", startQuiz);
+
+document.getElementById("modeStart")
+  .addEventListener("click", startQuiz);
+
+document.getElementById("restartButton")
+  .addEventListener("click", startQuiz);
+
+document.getElementById("backHome")
+  .addEventListener("click", goHome);
+
+document.getElementById("headerHome")
+  .addEventListener("click", goHome);
+
+document.getElementById("navHome")
+  .addEventListener("click", goHome);
+
+document.getElementById("navModes")
+  .addEventListener("click", goModes);
+
+nextButton.addEventListener("click", nextQuestion);
+
+// VERSION 2 TERMINEE
+</script>
+
 </body>
 </html>
