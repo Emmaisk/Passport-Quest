@@ -1,289 +1,338 @@
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploration HD-2D - Désert Spatial</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        
-        #ui-layer {
-            position: absolute; top: 20px; left: 20px; color: white;
-            background: linear-gradient(135deg, rgba(20,20,20,0.9), rgba(0,0,0,0.7)); 
-            padding: 15px 25px; border-radius: 12px; border: 1px solid #d35400;
-            box-shadow: 0 4px 15px rgba(211, 84, 0, 0.4); z-index: 10;
-        }
-        h2 { margin: 0 0 5px 0; color: #f39c12; text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem; }
-        p { margin: 0; color: #bdc3c7; font-size: 0.9rem; }
-        
-        #dialogue-box {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85); color: white; padding: 20px 30px;
-            border-radius: 8px; border-top: 4px solid #f39c12; font-size: 1.1rem; 
-            display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 20;
-            text-align: center; width: 60%; max-width: 600px;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PassportQuest — Version 3</title>
+<style>
+:root{--bg:#080f22;--card:#142441;--blue:#77c6ff;--purple:#b4a8ff;--white:#f4f7ff;--muted:#a7b8d4;--line:#ffffff22;--green:#73e0b2;--red:#ff97aa}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--white);font-family:Segoe UI,Arial,sans-serif;background:radial-gradient(ellipse at 80% 15%,#14345d,transparent 46%),radial-gradient(ellipse at 5% 90%,#1b2450,transparent 42%),var(--bg);min-height:100vh}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:4px}[hidden]{display:none!important}a{color:#9cdbff}
+header{max-width:1220px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:25px 26px}.logo{background:none;border:0;color:white;font-size:25px;font-weight:800;letter-spacing:-.6px}.logo span{color:var(--blue)}nav{display:flex;gap:22px}nav button{border:0;background:none;color:var(--muted)}nav button:hover{color:#fff}.version,.tag{border:1px solid #7ac6ff55;background:#7ac6ff12;border-radius:30px;color:#b4e0ff;font-size:12px;padding:9px 14px}
+.hero{max-width:1220px;margin:auto;padding:72px 26px 85px;display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:35px}.eyebrow{font-size:12px;color:#9cdbff;letter-spacing:2px;font-weight:800}.hero h1{font-size:clamp(43px,5.5vw,70px);letter-spacing:-2px;line-height:1.12;margin:25px 0}.gradient{background:linear-gradient(90deg,#6ecaff,#b6a4ff);background-clip:text;-webkit-background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:17px;line-height:1.8;max-width:520px}.primary,.secondary{border-radius:13px;padding:15px 23px;font-weight:800;transition:transform .2s}.primary{border:0;color:#08162b;background:linear-gradient(115deg,#79d0ff,#82a4ff)}.secondary{border:1px solid var(--line);background:#ffffff12;color:white}.primary:not(:disabled):hover,.secondary:not(:disabled):hover{transform:translateY(-3px)}button:disabled{opacity:.55;cursor:not-allowed}.hero .primary{margin-top:22px}
+.globe-area{height:410px;display:grid;place-items:center;position:relative}.globe-area:before{content:"";position:absolute;width:300px;height:300px;background:#228fff;filter:blur(90px);opacity:.24;border-radius:50%}.orbit{position:absolute;border:1px solid #8fcaff5c;border-radius:50%;width:390px;height:270px;transform:rotate(-24deg)}.earth{position:relative;font-size:230px;filter:drop-shadow(0 0 30px #289dff66);animation:float 5s ease-in-out infinite}@keyframes float{50%{transform:translateY(-17px)}}.floating{position:absolute;background:#102340ec;border:1px solid #79c4ff6b;border-radius:12px;padding:13px 16px;color:#c3e9ff;font-size:13px}.floating.one{top:65px;left:0}.floating.two{right:0;bottom:70px}
+.section{max-width:1220px;padding:30px 26px 88px;margin:auto}.section h2{font-size:35px;margin:12px 0}.subtitle{color:var(--muted);line-height:1.7;margin-bottom:30px}.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:19px}.mode{background:linear-gradient(155deg,#1c3258,#111e38);border:1px solid var(--line);border-radius:22px;padding:28px;display:flex;flex-direction:column;min-height:310px}.mode.featured{border-color:#73c8ff88}.mode-icon{font-size:35px;display:grid;place-items:center;width:64px;height:64px;background:#81bfff18;border-radius:18px;margin-bottom:21px}.mode h3{font-size:22px;margin:0 0 12px}.mode p{font-size:14px;line-height:1.8;color:var(--muted);flex:1}.mode .primary{margin-top:16px;width:100%}.soon{font-size:13px;color:#b7d8ff;margin-top:18px}
+.quiz-layout{max-width:940px;margin:40px auto 100px;padding:0 23px}.quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px}.quiz-label{font-size:14px;font-weight:800;color:#abdfff}.score{border:1px solid #8bc9ff55;background:#8bc9ff17;padding:11px 15px;border-radius:12px;font-weight:800}.progress{background:#263759;height:8px;border-radius:50px;overflow:hidden;margin-bottom:25px}.progress-fill{height:100%;background:linear-gradient(90deg,#68ccff,#b6a5ff);width:0;transition:width .3s}.quiz-card{background:linear-gradient(145deg,#182d50,#0f1c36);border:1px solid var(--line);box-shadow:0 24px 70px #0003;border-radius:24px;padding:35px}.question{font-size:clamp(24px,3.4vw,32px);line-height:1.4;margin:25px 0}.photo-frame{position:relative;overflow:hidden;border-radius:17px;background:#08152c;border:1px solid #ffffff20;aspect-ratio:16/9;margin:20px 0}.photo-frame img{width:100%;height:100%;object-fit:cover;display:block}.photo-status{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#c5ddf5;background:#0e213c;padding:22px}.credit{color:#b2c4df;font-size:12px;line-height:1.6;margin:8px 0 25px}.credit a{margin-left:8px}.answers{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.answer{text-align:left;background:#10213e;border:1px solid #ffffff22;border-radius:13px;padding:18px;color:white;font-weight:650;min-height:70px;transition:.2s}.answer:not(:disabled):hover{background:#203e66;border-color:#7dcaff}.answer.correct{background:#143e39;border-color:var(--green);color:#b6f9df}.answer.wrong{background:#492638;border-color:var(--red);color:#ffd7df}.feedback{border-radius:14px;margin-top:24px;padding:19px;line-height:1.7;font-size:14px}.feedback.success{background:#2bcc8f12;border:1px solid #6ce2ad66}.feedback.error{background:#f66f9812;border:1px solid #ff819977}.quiz-actions{display:flex;justify-content:flex-end;margin-top:24px}
+.center-screen{max-width:680px;margin:65px auto 110px;padding:48px 30px;text-align:center;background:linear-gradient(155deg,#20365b,#111d37);border:1px solid #ffffff25;border-radius:25px}.big-icon{font-size:66px}.center-screen h2{font-size:34px;margin:18px 0}.center-screen p{line-height:1.8;color:var(--muted)}.final-score{font-size:70px;color:#91d0ff;font-weight:900;margin:22px 0}.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}footer{text-align:center;padding:25px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+@media(max-width:850px){.hero{grid-template-columns:1fr;text-align:center;padding-top:40px}.hero p{margin:0 auto}.globe-area{height:310px}.earth{font-size:170px}.orbit{width:290px;height:210px}.modes{grid-template-columns:1fr}.mode{min-height:0}.answers{grid-template-columns:1fr}}
+@media(max-width:540px){header{padding:18px}.logo{font-size:19px}nav{gap:11px}nav button{font-size:12px}.version{display:none}.quiz-card{padding:20px}.hero h1{font-size:41px}.floating{font-size:10px;padding:9px}.photo-frame{aspect-ratio:4/3}.center-screen{margin:35px 16px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
 </head>
 <body>
+<header>
+  <button class="logo" id="headerHome">🌍 Passport<span>Quest</span></button>
+  <nav><button id="navHome">Accueil</button><button id="navModes">Les modes</button></nav>
+  <span class="version">VERSION 3.0</span>
+</header>
 
-    <div id="ui-layer">
-        <h2>Secteur Désertique</h2>
-        <p>Explorez les vestiges anciens.</p>
-        <p style="font-size: 0.8rem; margin-top: 10px; color: #7f8c8d;">Déplacement : Z Q S D</p>
+<div id="homeScreen">
+  <main class="hero">
+    <div>
+      <div class="eyebrow">✦ UNE AVENTURE À TRAVERS LE MONDE</div>
+      <h1>Explore le monde.<br><span class="gradient">Défie tes connaissances.</span></h1>
+      <p>Des lieux emblématiques aux grands événements géopolitiques : découvre notre planète, reconnais des monuments célèbres et relève des défis.</p>
+      <button class="primary" id="heroStart">Commencer à jouer →</button>
     </div>
+    <div class="globe-area" aria-label="Illustration du globe terrestre">
+      <div class="orbit"></div><div class="earth" aria-hidden="true">🌎</div>
+      <div class="floating one">📸 Devine le lieu</div>
+      <div class="floating two">🌍 Explore les pays</div>
+    </div>
+  </main>
+  <section class="section" id="modes">
+    <div class="eyebrow">À TOI DE JOUER</div>
+    <h2>Choisis ton défi</h2>
+    <p class="subtitle">Deux modes jouables, pour apprendre tout en t'amusant.</p>
+    <div class="modes">
+      <article class="mode featured">
+        <div class="mode-icon">🌍</div><h3>Quiz du monde</h3>
+        <p>10 questions de géographie, d'histoire et de relations internationales. Gagne un point par bonne réponse.</p>
+        <button class="primary" id="geoStart">Jouer au quiz →</button>
+      </article>
+      <article class="mode featured">
+        <div class="mode-icon">📸</div><h3>Images mystères</h3>
+        <p>De vraies photographies provenant de Wikimedia Commons. Retrouve leur pays et découvre les lieux emblématiques.</p>
+        <button class="primary" id="photoStart">Deviner les lieux →</button>
+      </article>
+      <article class="mode">
+        <div class="mode-icon">🧩</div><h3>Pays mystère</h3>
+        <p>Un pays caché et plusieurs indices pour le retrouver. Ce mode arrivera dans une prochaine version.</p>
+        <span class="soon">🔒 Prochaine version</span>
+      </article>
+    </div>
+  </section>
+</div>
 
-    <div id="dialogue-box">Texte du dialogue</div>
+<section class="center-screen" id="loadingScreen" hidden aria-live="polite">
+  <div class="big-icon">📸</div><h2>Chargement des photographies...</h2>
+  <p>PassportQuest contacte Wikimedia Commons pour récupérer les images et leurs crédits.</p>
+</section>
 
-    <script>
-        let scene, camera, renderer, player, alien, playerLight;
-        const keys = { z: false, q: false, s: false, d: false };
-        let isMoving = false;
-        let time = 0;
+<section class="quiz-layout" id="quizScreen" hidden>
+  <div class="quiz-top">
+    <span class="quiz-label" id="counter">Question 1 / 10</span>
+    <span class="score" id="score">⭐ 0 point</span>
+  </div>
+  <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="quiz-card">
+    <span class="tag" id="category">GÉOGRAPHIE</span>
+    <h2 class="question" id="question">Question...</h2>
+    <div id="photoBlock" hidden>
+      <div class="photo-frame">
+        <img id="quizPhoto" alt="Photographie d'un lieu à identifier">
+        <div id="photoStatus" class="photo-status">Chargement de la photo...</div>
+      </div>
+      <p class="credit" id="photoCredit"></p>
+    </div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback" aria-live="polite" hidden></div>
+    <div class="quiz-actions"><button class="primary" id="nextButton" disabled>Question suivante →</button></div>
+  </div>
+</section>
 
-        // --- GÉNÉRATEUR DE TEXTURES PIXEL ART ---
-        // Permet de dessiner de vrais sprites 16x16 pixel par pixel sans fichier externe
-        function createPixelTexture(artArray, palette) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            const pSize = 4; // Taille d'un "pixel"
-            
-            for(let y = 0; y < 16; y++) {
-                for(let x = 0; x < 16; x++) {
-                    const char = artArray[y][x];
-                    if (char !== ' ') {
-                        ctx.fillStyle = palette[char];
-                        ctx.fillRect(x * pSize, y * pSize, pSize, pSize);
-                    }
-                }
-            }
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.magFilter = THREE.NearestFilter; // Conserve le côté pixel net (HD-2D)
-            return tex;
-        }
+<section class="center-screen" id="resultScreen" hidden>
+  <div class="big-icon">🏆</div><div class="eyebrow">PARTIE TERMINÉE</div>
+  <h2>Bravo, explorateur !</h2><div id="finalScore" class="final-score">0 / 10</div>
+  <p id="resultMessage"></p>
+  <div class="actions">
+    <button class="primary" id="restartButton">🔄 Rejouer</button>
+    <button class="secondary" id="backHome">Retour à l'accueil</button>
+  </div>
+</section>
 
-        // Dessin de l'astronaute
-        const playerArt = [
-            "      BBBB      ",
-            "     BWWGGB     ",
-            "    BWCCCCDB    ",
-            "    BWCCCCDB    ",
-            "    BWWGGBBB    ",
-            "   BBBWWGGBBB   ",
-            "  BBRBWWGGBKRB  ",
-            "  BWWBBWGBBWWB  ",
-            "  BWWBBWGBBWWB  ",
-            "   BB BWWG BB   ",
-            "      BWWG B    ",
-            "     BWWGGB     ",
-            "     BWWGGB     ",
-            "     BWGBWG     ",
-            "    BBWGBBWG    ",
-            "    BBBBBBBB    "
-        ];
-        const playerPalette = { 'B': '#111', 'W': '#FFF', 'G': '#AAB7B8', 'C': '#00FFFF', 'D': '#0088AA', 'R': '#E74C3C', 'K': '#34495E' };
+<section class="center-screen" id="errorScreen" hidden>
+  <div class="big-icon">📡</div><h2>Les images sont indisponibles</h2>
+  <p>Impossible de joindre Wikimedia Commons ou de récupérer les photographies pour le moment. Vérifie ta connexion et réessaie.</p>
+  <div class="actions">
+    <button class="primary" id="retryButton">Réessayer</button>
+    <button class="secondary" id="errorHome">Retour à l'accueil</button>
+  </div>
+</section>
+<footer>PassportQuest © 2026 — Projet étudiant — Version 3 • Photographies : Wikimedia Commons</footer>
 
-        // Dessin de l'Alien/Cactus
-        const alienArt = [
-            "       BB       ",
-            "      BMMB      ",
-            "     BMMMMB     ",
-            "  BB BMYYMB BB  ",
-            " BMMBBMYYMBBMMB ",
-            " BMMMBMMMMBMMMB ",
-            " BMMMBMMMMBMMMB ",
-            "  BB BMMMMB BB  ",
-            "     BMMMMB     ",
-            "    BBMMMMBB    ",
-            "   BMMMMMMMMB   ",
-            "   BMMMMMMMMB   ",
-            "   BMMMMMMMMB   ",
-            "   BMMMMMMMMB   ",
-            "   BMMMMMMMMB   ",
-            "   BBBBBBBBBB   "
-        ];
-        const alienPalette = { 'B': '#0E2F1D', 'M': '#27AE60', 'Y': '#F1C40F' };
+<script>
+// PASSPORTQUEST V3 : QUIZ + PHOTOGRAPHIES VIA L'API WIKIMEDIA COMMONS
 
-        // --- GÉNÉRATEUR DE SABLE (Texture procédurale) ---
-        function createSandTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#b35d34'; 
-            ctx.fillRect(0, 0, 512, 512);
-            for(let i = 0; i < 20000; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? '#8e4422' : '#d47b4e';
-                ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
-            }
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(20, 20);
-            return tex;
-        }
+const geoQuestions = [
+  {category:"GÉOPOLITIQUE",question:"Dans quelle ville se trouve le siège principal de l'ONU ?",answers:["Genève","New York","Vienne","Bruxelles"],correct:1,explanation:"Le siège principal de l'ONU se trouve à New York, aux États-Unis."},
+  {category:"HISTOIRE",question:"En quelle année l'OTAN a-t-elle été fondée ?",answers:["1919","1945","1949","1991"],correct:2,explanation:"L'Organisation du traité de l'Atlantique nord a été créée en 1949."},
+  {category:"GÉOGRAPHIE",question:"Quelle est la capitale du Canada ?",answers:["Toronto","Montréal","Ottawa","Vancouver"],correct:2,explanation:"Ottawa est la capitale fédérale du Canada."},
+  {category:"GÉOGRAPHIE",question:"Quel canal relie la mer Méditerranée à la mer Rouge ?",answers:["Panama","Suez","Kiel","Corinthe"],correct:1,explanation:"Le canal de Suez, en Égypte, relie ces deux mers."},
+  {category:"HISTOIRE",question:"En quelle année le mur de Berlin est-il tombé ?",answers:["1979","1989","1991","2001"],correct:1,explanation:"Le mur de Berlin est tombé le 9 novembre 1989."},
+  {category:"RELATIONS INTERNATIONALES",question:"Combien de membres permanents siègent au Conseil de sécurité de l'ONU ?",answers:["4","5","6","10"],correct:1,explanation:"Ils sont cinq : Chine, États-Unis, France, Royaume-Uni et Russie."},
+  {category:"GÉOPOLITIQUE",question:"Quelle organisation possède un Parlement élu directement par les citoyens de ses États membres ?",answers:["L'ONU","L'Union européenne","L'OTAN","L'OMC"],correct:1,explanation:"Les citoyens de l'Union européenne élisent directement les députés européens."},
+  {category:"FRONTIÈRES",question:"Avec quel pays la France partage-t-elle une frontière terrestre en Amérique du Sud ?",answers:["Brésil","Chili","Mexique","Colombie"],correct:0,explanation:"La Guyane française partage notamment une frontière avec le Brésil."},
+  {category:"INSTITUTIONS",question:"Dans quelle ville siège la Cour internationale de Justice ?",answers:["Genève","Strasbourg","La Haye","Bruxelles"],correct:2,explanation:"La Cour internationale de Justice siège à La Haye, aux Pays-Bas."},
+  {category:"GÉOGRAPHIE",question:"Quel détroit relie la mer Noire à la mer de Marmara ?",answers:["Gibraltar","Le Bosphore","Malacca","Ormuz"],correct:1,explanation:"Le Bosphore est situé à Istanbul, en Turquie."}
+];
 
-        function init() {
-            // 1. SCÈNE
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a0b06); // Ciel nocturne
-            scene.fog = new THREE.FogExp2(0x1a0b06, 0.02);
+// Chaque fichier a été choisi sur Wikimedia Commons : nom exact + question vérifiée.
+// L'API fournit son URL de miniature, son auteur et sa licence.
+const photoQuestions = [
+  {file:"The Eiffel Tower, Paris 29 June 2015.jpg",answers:["France","Belgique","Italie","Allemagne"],correct:0,explanation:"La tour Eiffel se trouve à Paris, en France."},
+  {file:"Taj Mahal Exterior.jpg",answers:["Pakistan","Inde","Népal","Bangladesh"],correct:1,explanation:"Le Taj Mahal est situé à Agra, en Inde."},
+  {file:"Colosseum - Rome.jpg",answers:["Grèce","Espagne","Italie","Turquie"],correct:2,explanation:"Le Colisée est un amphithéâtre antique de Rome, en Italie."},
+  {file:"Badaling - Great Wall of China.jpg",answers:["Corée du Sud","Japon","Mongolie","Chine"],correct:3,explanation:"Cette photographie montre la Grande Muraille de Chine à Badaling, près de Pékin."},
+  {file:"Christ the Redeemer 1.jpg",answers:["Brésil","Argentine","Chili","Pérou"],correct:0,explanation:"Le Christ Rédempteur surplombe Rio de Janeiro, au Brésil."},
+  {file:"SydneyOpera House.JPG",answers:["Nouvelle-Zélande","Australie","Canada","États-Unis"],correct:1,explanation:"L'opéra de Sydney se trouve en Australie."}
+];
 
-            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true; 
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ombres douces (HD)
-            document.body.appendChild(renderer.domElement);
+const screens = {
+  home:document.getElementById("homeScreen"),
+  loading:document.getElementById("loadingScreen"),
+  quiz:document.getElementById("quizScreen"),
+  result:document.getElementById("resultScreen"),
+  error:document.getElementById("errorScreen")
+};
+const answersElement=document.getElementById("answers");
+const feedbackElement=document.getElementById("feedback");
+const nextButton=document.getElementById("nextButton");
+const quizPhoto=document.getElementById("quizPhoto");
+let currentMode="geo",gameQuestions=[],questionIndex=0,score=0,answered=false;
+let requestToken=0;
 
-            // 2. LUMIÈRES (HD-2D Vibes)
-            const ambient = new THREE.AmbientLight(0x404050, 0.6); // Lumière ambiante bleutée
-            scene.add(ambient);
-            
-            const sun = new THREE.DirectionalLight(0xff9955, 1.2); // Soleil rasant orangé
-            sun.position.set(-30, 20, -30);
-            sun.castShadow = true;
-            sun.shadow.camera.left = -50; sun.shadow.camera.right = 50;
-            sun.shadow.camera.top = 50; sun.shadow.camera.bottom = -50;
-            sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
-            scene.add(sun);
+function showScreen(name){
+  Object.entries(screens).forEach(([key,element])=>{element.hidden=key!==name});
+  window.scrollTo(0,0);
+}
+function shuffle(items){
+  const list=[...items];
+  for(let i=list.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [list[i],list[j]]=[list[j],list[i]];
+  }
+  return list;
+}
+function cleanText(html){
+  return new DOMParser().parseFromString(html||"","text/html").body.textContent.trim();
+}
 
-            // 3. DÉCORS ET TERRAIN
-            // Lune géante dans le ciel
-            const moonGeo = new THREE.CircleGeometry(30, 32);
-            const moonMat = new THREE.MeshBasicMaterial({ color: 0xffddaa });
-            const moon = new THREE.Mesh(moonGeo, moonMat);
-            moon.position.set(60, 40, -100);
-            scene.add(moon);
+// Appel API Wikimedia Commons : une seule requête pour les 6 fichiers.
+async function loadPhotos(){
+  const params=new URLSearchParams({
+    action:"query",format:"json",formatversion:"2",prop:"imageinfo",
+    iiprop:"url|user|extmetadata",iiurlwidth:"960",
+    titles:photoQuestions.map(q=>"File:"+q.file).join("|"),origin:"*"
+  });
+  const url="https://commons.wikimedia.org/w/api.php?"+params;
+  const response=await fetch(url);
+  if(!response.ok)throw new Error("Erreur HTTP "+response.status);
+  const data=await response.json();
+  if(data.error)throw new Error(data.error.info||"Erreur API");
+  const pages=data.query?.pages||[];
+  const norm=value=>value.toLowerCase().replaceAll("_"," ");
+  const lookup=new Map(pages.map(page=>[norm(page.title),page]));
 
-            // Terrain (Sable)
-            const groundGeo = new THREE.PlaneGeometry(200, 200, 100, 100);
-            const pos = groundGeo.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-                let x = pos.getX(i); let y = pos.getY(i);
-                let z = Math.sin(x * 0.05) * Math.cos(y * 0.05) * 3 + Math.sin(x * 0.1) * 1;
-                pos.setZ(i, z);
-            }
-            groundGeo.computeVertexNormals();
-            
-            const groundMat = new THREE.MeshStandardMaterial({ map: createSandTexture(), roughness: 1 });
-            const ground = new THREE.Mesh(groundGeo, groundMat);
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            scene.add(ground);
+  return photoQuestions.flatMap(q=>{
+    const page=lookup.get(norm("File:"+q.file));
+    const info=page?.imageinfo?.[0];
+    if(!info?.thumburl&&!info?.url)return [];
+    const meta=info.extmetadata||{};
+    const artist=cleanText(meta.Artist?.value||info.user||"Auteur inconnu").slice(0,110);
+    const license=cleanText(meta.LicenseShortName?.value||"Licence : consulter la source");
+    return [{...q,category:"IMAGES MYSTÈRES",question:"Dans quel pays se trouve ce lieu emblématique ?",
+      imageUrl:info.thumburl||info.url,
+      sourceUrl:info.descriptionurl||"https://commons.wikimedia.org/wiki/"+encodeURIComponent(page.title),
+      artist,license,licenseUrl:meta.LicenseUrl?.value||""}];
+  });
+}
 
-            // Vestiges (Squelette géant)
-            const boneGeo = new THREE.TorusGeometry(8, 0.8, 8, 24, Math.PI);
-            const boneMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.8 });
-            for(let i = 0; i < 5; i++) {
-                const rib = new THREE.Mesh(boneGeo, boneMat);
-                rib.position.set(-15, -1, -20 - (i * 6));
-                rib.rotation.y = Math.PI / 4;
-                rib.castShadow = true; rib.receiveShadow = true;
-                scene.add(rib);
-            }
+async function startQuiz(mode){
+  currentMode=mode;questionIndex=0;score=0;answered=false;
+  const token=++requestToken;
+  if(mode==="photo"){
+    showScreen("loading");
+    try{
+      gameQuestions=shuffle(await loadPhotos());
+      if(token!==requestToken)return;
+      if(gameQuestions.length===0)throw new Error("Aucune image chargée");
+    }catch(error){
+      console.error("Wikimedia Commons :",error);
+      if(token===requestToken)showScreen("error");
+      return;
+    }
+  }else{
+    gameQuestions=shuffle(geoQuestions);
+  }
+  if(token!==requestToken)return;
+  showScreen("quiz");showQuestion();
+}
 
-            // Rochers et Cristaux
-            const rockGeo = new THREE.DodecahedronGeometry(1.5);
-            const rockMat = new THREE.MeshStandardMaterial({ color: 0x4a2e22, roughness: 0.9 });
-            const crystalGeo = new THREE.ConeGeometry(0.5, 3, 4);
-            const crystalMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x0088cc, emissiveIntensity: 0.5 });
+function showQuestion(){
+  answered=false;
+  const q=gameQuestions[questionIndex],total=gameQuestions.length;
+  document.getElementById("counter").textContent="Question "+(questionIndex+1)+" / "+total;
+  document.getElementById("score").textContent="⭐ "+score+" point"+(score>1?"s":"");
+  document.getElementById("progressFill").style.width=((questionIndex+1)/total*100)+"%";
+  document.getElementById("category").textContent=q.category;
+  document.getElementById("question").textContent=q.question;
+  feedbackElement.hidden=true;feedbackElement.textContent="";feedbackElement.className="feedback";
+  nextButton.disabled=true;
+  nextButton.textContent=questionIndex===total-1?"Voir mes résultats →":"Question suivante →";
+  answersElement.replaceChildren();
 
-            for(let i=0; i<40; i++) {
-                const rock = new THREE.Mesh(rockGeo, rockMat);
-                rock.position.set((Math.random()-0.5)*150, 0.5, (Math.random()-0.5)*150);
-                rock.rotation.set(Math.random(), Math.random(), Math.random());
-                rock.castShadow = true; scene.add(rock);
+  const isPhoto=currentMode==="photo";
+  document.getElementById("photoBlock").hidden=!isPhoto;
+  q.answers.forEach((answer,index)=>{
+    const button=document.createElement("button");
+    button.className="answer";button.type="button";
+    button.textContent=String.fromCharCode(65+index)+". "+answer;
+    button.disabled=isPhoto;
+    button.addEventListener("click",()=>selectAnswer(index));
+    answersElement.appendChild(button);
+  });
 
-                if(Math.random() > 0.8) { // Quelques cristaux
-                    const crystal = new THREE.Mesh(crystalGeo, crystalMat);
-                    crystal.position.set(rock.position.x + 1, 1.5, rock.position.z + 1);
-                    crystal.castShadow = true; scene.add(crystal);
-                }
-            }
+  if(isPhoto){
+    const photoStatus=document.getElementById("photoStatus");
+    const credit=document.getElementById("photoCredit");
+    photoStatus.hidden=false;photoStatus.textContent="Chargement de la photographie...";
+    quizPhoto.removeAttribute("src");
+    credit.replaceChildren();
+    const label=document.createElement("span");
+    label.textContent="Photo : "+q.artist+" · "+q.license+" · ";
+    const source=document.createElement("a");
+    source.href=q.sourceUrl;source.textContent="Source Wikimedia Commons";
+    source.target="_blank";source.rel="noopener noreferrer";
+    credit.append(label);
+    if(q.licenseUrl && /^https:\/\//.test(q.licenseUrl)){
+      const licenseLink=document.createElement("a");
+      licenseLink.href=q.licenseUrl;licenseLink.textContent="Licence";
+      licenseLink.target="_blank";licenseLink.rel="noopener noreferrer";
+      credit.append(licenseLink,document.createTextNode(" · "));
+    }
+    credit.append(source);
+    const thisQuestion=questionIndex;
+    quizPhoto.onload=()=>{
+      if(currentMode!=="photo"||questionIndex!==thisQuestion||screens.quiz.hidden)return;
+      photoStatus.hidden=true;
+      answersElement.querySelectorAll(".answer").forEach(b=>b.disabled=false);
+    };
+    quizPhoto.onerror=()=>{
+      if(currentMode!=="photo"||questionIndex!==thisQuestion||screens.quiz.hidden)return;
+      photoStatus.hidden=false;
+      photoStatus.textContent="Cette image n'a pas pu être affichée. Tu peux passer à la suivante sans pénalité.";
+      answered=true;
+      nextButton.disabled=false;
+    };
+    quizPhoto.src=q.imageUrl;
+  }
+}
 
-            // 4. LES PERSONNAGES (Sprites HD)
-            const playerTex = createPixelTexture(playerArt, playerPalette);
-            player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTex }));
-            player.scale.set(3, 3, 1);
-            scene.add(player);
+function selectAnswer(index){
+  if(answered)return;
+  answered=true;
+  const q=gameQuestions[questionIndex],correct=index===q.correct;
+  if(correct)score++;
+  answersElement.querySelectorAll(".answer").forEach((button,i)=>{
+    button.disabled=true;
+    if(i===q.correct)button.classList.add("correct");
+    else if(i===index)button.classList.add("wrong");
+  });
+  feedbackElement.hidden=false;
+  feedbackElement.className="feedback "+(correct?"success":"error");
+  feedbackElement.textContent=(correct?"✅ Bonne réponse ! ":"❌ Bonne réponse : "+q.answers[q.correct]+". ")+q.explanation;
+  document.getElementById("score").textContent="⭐ "+score+" point"+(score>1?"s":"");
+  nextButton.disabled=false;
+}
 
-            // Lumière personnelle du joueur (effet lanterne magique)
-            playerLight = new THREE.PointLight(0x00ffff, 1, 10);
-            playerLight.position.set(0, 1, 0);
-            scene.add(playerLight);
+function nextQuestion(){
+  if(!answered)return;
+  questionIndex++;
+  if(questionIndex<gameQuestions.length)showQuestion();else showResults();
+}
+function showResults(){
+  showScreen("result");
+  const total=gameQuestions.length;
+  document.getElementById("finalScore").textContent=score+" / "+total;
+  document.getElementById("resultMessage").textContent=
+    score===total?"🌟 Score parfait ! Tu connais vraiment bien le monde !":
+    score/total>=.7?"🌍 Très belle performance ! Tu maîtrises déjà beaucoup de sujets.":
+    score/total>=.4?"👏 Bien joué ! Tu as de bonnes bases. Continue à explorer.":
+    "🚀 Chaque question est l'occasion d'apprendre. Réessaie pour progresser !";
+}
+function goHome(){requestToken++;showScreen("home")}
+function goModes(){goHome();document.getElementById("modes").scrollIntoView({behavior:"smooth"})}
 
-            const alienTex = createPixelTexture(alienArt, alienPalette);
-            alien = new THREE.Sprite(new THREE.SpriteMaterial({ map: alienTex }));
-            alien.scale.set(3, 3, 1);
-            alien.position.set(10, 1.5, -15);
-            scene.add(alien);
-
-            // Event Listeners clavier
-            window.addEventListener('keydown', (e) => { 
-                const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = true; 
-            });
-            window.addEventListener('keyup', (e) => { 
-                const k = e.key.toLowerCase(); if (keys.hasOwnProperty(k)) keys[k] = false; 
-            });
-            window.addEventListener('resize', onWindowResize);
-
-            animate();
-        }
-
-        // Obtenir la hauteur du sol à une position X/Z donnée
-        function getGroundHeight(x, z) {
-            return Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3 + Math.sin(x * 0.1) * 1;
-        }
-
-        // 5. BOUCLE D'ANIMATION
-        function animate() {
-            requestAnimationFrame(animate);
-            time += 0.1;
-            const speed = 0.2;
-            isMoving = false;
-
-            // Déplacement
-            if (keys.z) { player.position.z -= speed; isMoving = true; }
-            if (keys.s) { player.position.z += speed; isMoving = true; }
-            if (keys.q) { player.position.x -= speed; isMoving = true; }
-            if (keys.d) { player.position.x += speed; isMoving = true; }
-
-            // Placer le joueur et le PNJ sur le terrain vallonné
-            const basePlayerY = getGroundHeight(player.position.x, player.position.z) + 1.5;
-            // Animation de marche (sautillement)
-            player.position.y = basePlayerY + (isMoving ? Math.abs(Math.sin(time * 2)) * 0.3 : 0);
-            
-            alien.position.y = getGroundHeight(alien.position.x, alien.position.z) + 1.5;
-            playerLight.position.copy(player.position);
-
-            // Interaction PNJ
-            const dist = player.position.distanceTo(alien.position);
-            const box = document.getElementById('dialogue-box');
-            if (dist < 6) {
-                box.style.display = 'block';
-                box.innerText = "L'Autochtone : 'Les restes des anciens Léviathans des Sables... Fascinant, n'est-ce pas ?'";
-            } else {
-                box.style.display = 'none';
-            }
-
-            // Suivi Caméra fluide
-            const targetCamPos = new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 12);
-            camera.position.lerp(targetCamPos, 0.08);
-            camera.lookAt(player.position);
-
-            renderer.render(scene, camera);
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // Lancement
-        init();
-    </script>
+document.getElementById("headerHome").addEventListener("click",goHome);
+document.getElementById("navHome").addEventListener("click",goHome);
+document.getElementById("navModes").addEventListener("click",goModes);
+document.getElementById("heroStart").addEventListener("click",goModes);
+document.getElementById("geoStart").addEventListener("click",()=>startQuiz("geo"));
+document.getElementById("photoStart").addEventListener("click",()=>startQuiz("photo"));
+document.getElementById("retryButton").addEventListener("click",()=>startQuiz("photo"));
+document.getElementById("errorHome").addEventListener("click",goHome);
+document.getElementById("restartButton").addEventListener("click",()=>startQuiz(currentMode));
+document.getElementById("backHome").addEventListener("click",goHome);
+nextButton.addEventListener("click",nextQuestion);
+</script>
 </body>
 </html>
+
+
+
+
