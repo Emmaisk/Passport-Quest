@@ -1,8 +1,3 @@
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -38,6 +33,18 @@ header{max-width:1220px;margin:auto;display:flex;align-items:center;justify-cont
 .center-screen{max-width:680px;margin:65px auto 110px;padding:48px 30px;text-align:center;background:linear-gradient(155deg,#20365b,#111d37);border:1px solid #ffffff25;border-radius:25px}.big-icon{font-size:66px}.center-screen h2{font-size:34px;margin:18px 0}.center-screen p{line-height:1.8;color:var(--muted)}.final-score{font-size:70px;color:#91d0ff;font-weight:900;margin:22px 0}.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}footer{text-align:center;padding:25px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
 @media(max-width:850px){.hero{grid-template-columns:1fr;text-align:center;padding-top:40px}.hero p{margin:0 auto}.globe-area{height:310px}.earth{font-size:170px}.orbit{width:290px;height:210px}.modes{grid-template-columns:1fr}.mode{min-height:0}.answers{grid-template-columns:1fr}}
 @media(max-width:540px){header{padding:18px}.logo{font-size:19px}nav{gap:11px}nav button{font-size:12px}.version{display:none}.quiz-card{padding:20px}.hero h1{font-size:41px}.floating{font-size:10px;padding:9px}.photo-frame{height:clamp(210px,34vh,280px)}.center-screen{margin:35px 16px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* V4 corrigee : quiz compact et photo entiere sans decoupe */
+.quiz-layout{max-width:1050px;margin:12px auto 36px;padding:0 16px}
+.quiz-top{margin-bottom:10px}.progress{margin-bottom:12px;height:6px}
+.quiz-card{padding:20px 24px;border-radius:18px}
+.question{font-size:clamp(19px,2.5vw,26px);margin:12px 0 14px;line-height:1.25}
+.photo-frame{height:230px;max-height:32vh;min-height:150px;margin:12px 0 6px;background:#0b1a31}
+.photo-frame img{width:100%;height:100%;max-width:100%;object-fit:contain!important;object-position:center!important}
+.credit{margin:5px 0 12px;font-size:11px;line-height:1.35}
+.answers{gap:9px}.answer{min-height:48px;padding:11px 15px}
+.feedback{margin-top:12px;padding:12px}.quiz-actions{margin-top:12px}
+@media(max-width:540px){.quiz-layout{margin-top:6px;padding:0 10px}.quiz-card{padding:15px}.photo-frame{height:190px;max-height:29vh}.question{font-size:20px}.answer{min-height:45px}}
 </style>
 </head>
 <body>
@@ -155,7 +162,7 @@ const photoQuestions = [
   {file:"Taj Mahal Exterior.jpg",answers:["Pakistan","Inde","Népal","Bangladesh"],correct:1,explanation:"Le Taj Mahal est situé à Agra, en Inde."},
   {file:"Colosseum - Rome.jpg",answers:["Grèce","Espagne","Italie","Turquie"],correct:2,explanation:"Le Colisée est un amphithéâtre antique de Rome, en Italie."},
   {file:"Badaling - Great Wall of China.jpg",answers:["Corée du Sud","Japon","Mongolie","Chine"],correct:3,explanation:"Cette photographie montre la Grande Muraille de Chine à Badaling, près de Pékin."},
-  {file:"Christ the Redeemer 1.jpg",answers:["Brésil","Argentine","Chili","Pérou"],correct:0,explanation:"Le Christ Rédempteur surplombe Rio de Janeiro, au Brésil."},
+  {file:"Christtheredeemer.jpg",answers:["Brésil","Argentine","Chili","Pérou"],correct:0,explanation:"Le Christ Rédempteur surplombe Rio de Janeiro, au Brésil."},
   {file:"SydneyOpera House.JPG",answers:["Nouvelle-Zélande","Australie","Canada","États-Unis"],correct:1,explanation:"L'opéra de Sydney se trouve en Australie."}
 ];
 
@@ -172,6 +179,48 @@ const nextButton=document.getElementById("nextButton");
 const quizPhoto=document.getElementById("quizPhoto");
 let currentMode="geo",gameQuestions=[],questionIndex=0,score=0,answered=false;
 let requestToken=0;
+const SAVE_KEY="passportquest_v4_active_game";
+let selectedAnswer=null;
+function saveGame(){
+  if(!gameQuestions.length)return;
+  try{
+    sessionStorage.setItem(SAVE_KEY,JSON.stringify({
+      currentMode,gameQuestions,questionIndex,score,answered,selectedAnswer,
+      finished:!screens.result.hidden
+    }));
+  }catch(e){console.warn("Sauvegarde indisponible",e)}
+}
+function clearGame(){
+  try{sessionStorage.removeItem(SAVE_KEY)}catch(e){}
+}
+function restoreGame(){
+  try{
+    const raw=sessionStorage.getItem(SAVE_KEY);
+    if(!raw)return;
+    const saved=JSON.parse(raw);
+    if(!["geo","photo"].includes(saved.currentMode)||
+       !Array.isArray(saved.gameQuestions)||!saved.gameQuestions.length||
+       !Number.isInteger(saved.questionIndex)||saved.questionIndex<0||
+       saved.questionIndex>=saved.gameQuestions.length)return;
+    currentMode=saved.currentMode;
+    gameQuestions=saved.gameQuestions;
+    questionIndex=saved.questionIndex;
+    score=Number(saved.score)||0;
+    answered=false;
+    if(saved.finished){showResults();return}
+    showScreen("quiz");
+    showQuestion();
+    if(saved.answered){
+      if(Number.isInteger(saved.selectedAnswer)){
+        showAnswer(saved.selectedAnswer,true);
+      }else{
+        answered=true;
+        nextButton.disabled=false;
+      }
+    }
+  }catch(error){console.warn("Restauration indisponible",error)}
+}
+
 
 function showScreen(name){
   Object.entries(screens).forEach(([key,element])=>{element.hidden=key!==name});
@@ -220,7 +269,7 @@ async function loadPhotos(){
 }
 
 async function startQuiz(mode){
-  currentMode=mode;questionIndex=0;score=0;answered=false;
+  currentMode=mode;questionIndex=0;score=0;answered=false;selectedAnswer=null;clearGame();
   const token=++requestToken;
   if(mode==="photo"){
     showScreen("loading");
@@ -237,11 +286,11 @@ async function startQuiz(mode){
     gameQuestions=shuffle(geoQuestions);
   }
   if(token!==requestToken)return;
-  showScreen("quiz");showQuestion();
+  showScreen("quiz");showQuestion();saveGame();
 }
 
 function showQuestion(){
-  answered=false;
+  answered=false;selectedAnswer=null;
   const q=gameQuestions[questionIndex],total=gameQuestions.length;
   document.getElementById("counter").textContent="Question "+(questionIndex+1)+" / "+total;
   document.getElementById("score").textContent="⭐ "+score+" point"+(score>1?"s":"");
@@ -287,24 +336,25 @@ function showQuestion(){
     quizPhoto.onload=()=>{
       if(currentMode!=="photo"||questionIndex!==thisQuestion||screens.quiz.hidden)return;
       photoStatus.hidden=true;
-      answersElement.querySelectorAll(".answer").forEach(b=>b.disabled=false);
+      if(!answered)answersElement.querySelectorAll(".answer").forEach(b=>b.disabled=false);
     };
     quizPhoto.onerror=()=>{
       if(currentMode!=="photo"||questionIndex!==thisQuestion||screens.quiz.hidden)return;
       photoStatus.hidden=false;
       photoStatus.textContent="Cette image n'a pas pu être affichée. Tu peux passer à la suivante sans pénalité.";
-      answered=true;
-      nextButton.disabled=false;
+      answered=true;selectedAnswer=null;
+      nextButton.disabled=false;saveGame();
     };
     quizPhoto.src=q.imageUrl;
   }
 }
 
-function selectAnswer(index){
+function selectAnswer(index){showAnswer(index,false)}
+function showAnswer(index,restoring){
   if(answered)return;
-  answered=true;
+  answered=true;selectedAnswer=index;
   const q=gameQuestions[questionIndex],correct=index===q.correct;
-  if(correct)score++;
+  if(correct&&!restoring)score++;
   answersElement.querySelectorAll(".answer").forEach((button,i)=>{
     button.disabled=true;
     if(i===q.correct)button.classList.add("correct");
@@ -315,12 +365,13 @@ function selectAnswer(index){
   feedbackElement.textContent=(correct?"✅ Bonne réponse ! ":"❌ Bonne réponse : "+q.answers[q.correct]+". ")+q.explanation;
   document.getElementById("score").textContent="⭐ "+score+" point"+(score>1?"s":"");
   nextButton.disabled=false;
+  if(!restoring)saveGame();
 }
 
 function nextQuestion(){
   if(!answered)return;
   questionIndex++;
-  if(questionIndex<gameQuestions.length)showQuestion();else showResults();
+  if(questionIndex<gameQuestions.length){showQuestion();saveGame()}else showResults();
 }
 function showResults(){
   showScreen("result");
@@ -331,8 +382,9 @@ function showResults(){
     score/total>=.7?"🌍 Très belle performance ! Tu maîtrises déjà beaucoup de sujets.":
     score/total>=.4?"👏 Bien joué ! Tu as de bonnes bases. Continue à explorer.":
     "🚀 Chaque question est l'occasion d'apprendre. Réessaie pour progresser !";
+  saveGame();
 }
-function goHome(){requestToken++;showScreen("home")}
+function goHome(){requestToken++;clearGame();showScreen("home")}
 function goModes(){goHome();document.getElementById("modes").scrollIntoView({behavior:"smooth"})}
 
 document.getElementById("headerHome").addEventListener("click",goHome);
@@ -346,6 +398,7 @@ document.getElementById("errorHome").addEventListener("click",goHome);
 document.getElementById("restartButton").addEventListener("click",()=>startQuiz(currentMode));
 document.getElementById("backHome").addEventListener("click",goHome);
 nextButton.addEventListener("click",nextQuestion);
+restoreGame();
 </script>
 </body>
 </html>
