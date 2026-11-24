@@ -11,40 +11,75 @@ header{max-width:1220px;margin:auto;display:flex;align-items:center;justify-cont
 .hero{max-width:1220px;margin:auto;padding:72px 26px 85px;display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:35px}.eyebrow{font-size:12px;color:#9cdbff;letter-spacing:2px;font-weight:800}.hero h1{font-size:clamp(43px,5.5vw,70px);letter-spacing:-2px;line-height:1.12;margin:25px 0}.gradient{background:linear-gradient(90deg,#6ecaff,#b6a4ff);background-clip:text;-webkit-background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:17px;line-height:1.8;max-width:520px}.primary,.secondary{border-radius:13px;padding:15px 23px;font-weight:800;transition:transform .2s}.primary{border:0;color:#08162b;background:linear-gradient(115deg,#79d0ff,#82a4ff)}.secondary{border:1px solid var(--line);background:#ffffff12;color:white}.primary:not(:disabled):hover,.secondary:not(:disabled):hover{transform:translateY(-3px)}button:disabled{opacity:.55;cursor:not-allowed}.hero .primary{margin-top:22px}
 .globe-area{height:410px;display:grid;place-items:center;position:relative}.globe-area:before{content:"";position:absolute;width:300px;height:300px;background:#228fff;filter:blur(90px);opacity:.24;border-radius:50%}.orbit{position:absolute;border:1px solid #8fcaff5c;border-radius:50%;width:390px;height:270px;transform:rotate(-24deg)}.earth{position:relative;font-size:230px;filter:drop-shadow(0 0 30px #289dff66);animation:float 5s ease-in-out infinite}@keyframes float{50%{transform:translateY(-17px)}}.floating{position:absolute;background:#102340ec;border:1px solid #79c4ff6b;border-radius:12px;padding:13px 16px;color:#c3e9ff;font-size:13px}.floating.one{top:65px;left:0}.floating.two{right:0;bottom:70px}
 .section{max-width:1220px;padding:30px 26px 88px;margin:auto}.section h2{font-size:35px;margin:12px 0}.subtitle{color:var(--muted);line-height:1.7;margin-bottom:30px}.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:19px}.mode{background:linear-gradient(155deg,#1c3258,#111e38);border:1px solid var(--line);border-radius:22px;padding:28px;display:flex;flex-direction:column;min-height:310px}.mode.featured{border-color:#73c8ff88}.mode-icon{font-size:35px;display:grid;place-items:center;width:64px;height:64px;background:#81bfff18;border-radius:18px;margin-bottom:21px}.mode h3{font-size:22px;margin:0 0 12px}.mode p{font-size:14px;line-height:1.8;color:var(--muted);flex:1}.mode .primary{margin-top:16px;width:100%}.soon{font-size:13px;color:#b7d8ff;margin-top:18px}
-.quiz-layout{max-width:940px;margin:40px auto 100px;padding:0 23px}.quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px}.quiz-label{font-size:14px;font-weight:800;color:#abdfff}.score{border:1px solid #8bc9ff55;background:#8bc9ff17;padding:11px 15px;border-radius:12px;font-weight:800}.progress{background:#263759;height:8px;border-radius:50px;overflow:hidden;margin-bottom:25px}.progress-fill{height:100%;background:linear-gradient(90deg,#68ccff,#b6a5ff);width:0;transition:width .3s}.quiz-card{background:linear-gradient(145deg,#182d50,#0f1c36);border:1px solid var(--line);box-shadow:0 24px 70px #0003;border-radius:24px;padding:35px}.question{font-size:clamp(24px,3.4vw,32px);line-height:1.4;margin:25px 0}/* V4 : chaque photographie est entière, sans recadrage */
-.photo-frame{
-  position:relative;
-  display:grid;
-  place-items:center;
-  overflow:hidden;
-  height:clamp(240px,38vh,360px);
-  margin:20px 0;
-  border-radius:17px;
-  border:1px solid #ffffff20;
-  background:radial-gradient(ellipse at center,#173053,#08152c);
-}
-.photo-frame img{
-  width:100%;
-  height:100%;
-  display:block;
-  object-fit:contain;
-  object-position:center;
-}.photo-status{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#c5ddf5;background:#0e213c;padding:22px}.credit{color:#b2c4df;font-size:12px;line-height:1.6;margin:8px 0 25px}.credit a{margin-left:8px}.answers{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.answer{text-align:left;background:#10213e;border:1px solid #ffffff22;border-radius:13px;padding:18px;color:white;font-weight:650;min-height:70px;transition:.2s}.answer:not(:disabled):hover{background:#203e66;border-color:#7dcaff}.answer.correct{background:#143e39;border-color:var(--green);color:#b6f9df}.answer.wrong{background:#492638;border-color:var(--red);color:#ffd7df}.feedback{border-radius:14px;margin-top:24px;padding:19px;line-height:1.7;font-size:14px}.feedback.success{background:#2bcc8f12;border:1px solid #6ce2ad66}.feedback.error{background:#f66f9812;border:1px solid #ff819977}.quiz-actions{display:flex;justify-content:flex-end;margin-top:24px}
+.quiz-layout{max-width:940px;margin:40px auto 100px;padding:0 23px}.quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px}.quiz-label{font-size:14px;font-weight:800;color:#abdfff}.score{border:1px solid #8bc9ff55;background:#8bc9ff17;padding:11px 15px;border-radius:12px;font-weight:800}.progress{background:#263759;height:8px;border-radius:50px;overflow:hidden;margin-bottom:25px}.progress-fill{height:100%;background:linear-gradient(90deg,#68ccff,#b6a5ff);width:0;transition:width .3s}.quiz-card{background:linear-gradient(145deg,#182d50,#0f1c36);border:1px solid var(--line);box-shadow:0 24px 70px #0003;border-radius:24px;padding:35px}.question{font-size:clamp(24px,3.4vw,32px);line-height:1.4;margin:25px 0}.photo-frame{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #ffffff20;border-radius:17px;background:#08162e}
+.photo-frame img{display:block;object-fit:contain;object-position:center}
+.photo-status{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#c5ddf5;background:#0e213c;padding:22px}.credit{color:#b2c4df;font-size:12px;line-height:1.6;margin:8px 0 25px}.credit a{margin-left:8px}.answers{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.answer{text-align:left;background:#10213e;border:1px solid #ffffff22;border-radius:13px;padding:18px;color:white;font-weight:650;min-height:70px;transition:.2s}.answer:not(:disabled):hover{background:#203e66;border-color:#7dcaff}.answer.correct{background:#143e39;border-color:var(--green);color:#b6f9df}.answer.wrong{background:#492638;border-color:var(--red);color:#ffd7df}.feedback{border-radius:14px;margin-top:24px;padding:19px;line-height:1.7;font-size:14px}.feedback.success{background:#2bcc8f12;border:1px solid #6ce2ad66}.feedback.error{background:#f66f9812;border:1px solid #ff819977}.quiz-actions{display:flex;justify-content:flex-end;margin-top:24px}
 .center-screen{max-width:680px;margin:65px auto 110px;padding:48px 30px;text-align:center;background:linear-gradient(155deg,#20365b,#111d37);border:1px solid #ffffff25;border-radius:25px}.big-icon{font-size:66px}.center-screen h2{font-size:34px;margin:18px 0}.center-screen p{line-height:1.8;color:var(--muted)}.final-score{font-size:70px;color:#91d0ff;font-weight:900;margin:22px 0}.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}footer{text-align:center;padding:25px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
 @media(max-width:850px){.hero{grid-template-columns:1fr;text-align:center;padding-top:40px}.hero p{margin:0 auto}.globe-area{height:310px}.earth{font-size:170px}.orbit{width:290px;height:210px}.modes{grid-template-columns:1fr}.mode{min-height:0}.answers{grid-template-columns:1fr}}
-@media(max-width:540px){header{padding:18px}.logo{font-size:19px}nav{gap:11px}nav button{font-size:12px}.version{display:none}.quiz-card{padding:20px}.hero h1{font-size:41px}.floating{font-size:10px;padding:9px}.photo-frame{height:clamp(210px,34vh,280px)}.center-screen{margin:35px 16px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media(max-width:540px){header{padding:18px}.logo{font-size:19px}nav{gap:11px}nav button{font-size:12px}.version{display:none}.quiz-card{padding:20px}.hero h1{font-size:41px}.floating{font-size:10px;padding:9px}.center-screen{margin:35px 16px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 /* V4 corrigee : quiz compact et photo entiere sans decoupe */
 .quiz-layout{max-width:1050px;margin:12px auto 36px;padding:0 16px}
 .quiz-top{margin-bottom:10px}.progress{margin-bottom:12px;height:6px}
 .quiz-card{padding:20px 24px;border-radius:18px}
 .question{font-size:clamp(19px,2.5vw,26px);margin:12px 0 14px;line-height:1.25}
-.photo-frame{height:230px;max-height:32vh;min-height:150px;margin:12px 0 6px;background:#0b1a31}
-.photo-frame img{width:100%;height:100%;max-width:100%;object-fit:contain!important;object-position:center!important}
 .credit{margin:5px 0 12px;font-size:11px;line-height:1.35}
 .answers{gap:9px}.answer{min-height:48px;padding:11px 15px}
 .feedback{margin-top:12px;padding:12px}.quiz-actions{margin-top:12px}
-@media(max-width:540px){.quiz-layout{margin-top:6px;padding:0 10px}.quiz-card{padding:15px}.photo-frame{height:190px;max-height:29vh}.question{font-size:20px}.answer{min-height:45px}}
+@media(max-width:540px){.quiz-layout{margin-top:6px;padding:0 10px}.quiz-card{padding:15px}.question{font-size:20px}.answer{min-height:45px}}
+
+/* V4 : photo et réponses côte à côte sur ordinateur.
+   Les images gardent leurs dimensions proportionnelles naturelles. */
+.quiz-card.photo-mode .quiz-content{
+  display:grid;
+  grid-template-columns:minmax(0, 0.95fr) minmax(0, 1fr);
+  align-items:start;
+  gap:22px;
+}
+.quiz-card.photo-mode .answers{
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.quiz-card.photo-mode .answer{
+  min-height:51px;
+}
+#photoBlock{min-width:0}
+.photo-frame{
+  width:100%;
+  height:250px;
+  max-width:480px;
+  padding:8px;
+  margin:0 auto;
+  box-sizing:border-box;
+}
+/* Ces dimensions empêchent les photos verticales d'être recadrées
+   en format paysage. Ne pas utiliser width:100% ET height:100%. */
+#quizPhoto{
+  display:block;
+  width:auto !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  border-radius:10px;
+}
+.credit{
+  margin:7px 0 0;
+  font-size:11px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+  .quiz-card.photo-mode .quiz-content{grid-template-columns:1fr;gap:15px}
+  .quiz-card.photo-mode .answers{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .photo-frame{height:225px;max-width:440px}
+}
+@media(max-width:450px){
+  .quiz-card.photo-mode .answers{grid-template-columns:1fr;gap:8px}
+  .quiz-card.photo-mode .answer{min-height:42px}
+  .photo-frame{height:210px}
+}
 </style>
 </head>
 <body>
@@ -106,6 +141,7 @@ header{max-width:1220px;margin:auto;display:flex;align-items:center;justify-cont
   <div class="quiz-card">
     <span class="tag" id="category">GÉOGRAPHIE</span>
     <h2 class="question" id="question">Question...</h2>
+    <div class="quiz-content">
     <div id="photoBlock" hidden>
       <div class="photo-frame">
         <img id="quizPhoto" alt="Photographie d'un lieu à identifier">
@@ -114,6 +150,7 @@ header{max-width:1220px;margin:auto;display:flex;align-items:center;justify-cont
       <p class="credit" id="photoCredit"></p>
     </div>
     <div class="answers" id="answers"></div>
+    </div>
     <div class="feedback" id="feedback" aria-live="polite" hidden></div>
     <div class="quiz-actions"><button class="primary" id="nextButton" disabled>Question suivante →</button></div>
   </div>
@@ -303,6 +340,7 @@ function showQuestion(){
   answersElement.replaceChildren();
 
   const isPhoto=currentMode==="photo";
+  document.querySelector(".quiz-card").classList.toggle("photo-mode",isPhoto);
   document.getElementById("photoBlock").hidden=!isPhoto;
   q.answers.forEach((answer,index)=>{
     const button=document.createElement("button");
@@ -402,6 +440,35 @@ restoreGame();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
